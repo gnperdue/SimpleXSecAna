@@ -1,3 +1,4 @@
 run_log.txt
 genie-mcjob-*.status
 gntp.*.ghep.root
+input-flux.root
