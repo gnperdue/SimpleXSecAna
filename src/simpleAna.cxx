@@ -62,16 +62,18 @@ int main(int argc, char ** argv)
 		// get the GENIE event
 		EventRecord &  event = *(mcrec->event);
 
-		LOG("myAnalysis", pNOTICE) << event;
-
 		//
 		// Put your event analysis code here 
 		//
-		// ... ... ... ... ...
-		// ... ... ... ... ...
-		//
-		// 
+    Interaction *in = event.Summary();
+    const ProcessInfo &proc = in->ProcInfo();
+    const XclsTag &xclsv = in->ExclTag();
+    bool qelcc = proc.IsQuasiElastic() && proc.IsWeakCC();
+    bool charm = xclsv.IsCharmEvent();
 
+    if (qelcc && !charm) {
+      LOG("myAnalysis", pNOTICE) << event.XSec();
+    }
 
 
 		//

@@ -60,13 +60,15 @@ LDLIBS += -L$(GENIE)/lib \
 all: simpleAna
 
 simpleAna: simpleAna.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o simpleAna simpleAna.cxx $(LDLIBS) 
+	mv simpleAna ../bin
 
 simpleAna.o: simpleAna.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c simpleAna.cxx -o simpleAna.o 
 
 clean:
-	-rm -f simpleAna
+	-rm -f ../bin/simpleAna
 	-rm -f simpleAna.o
 
 remake:
