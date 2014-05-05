@@ -57,7 +57,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: simpleAna
+all: simpleAna gstana_r grooana_r
 
 simpleAna: simpleAna.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -67,9 +67,22 @@ simpleAna: simpleAna.o
 simpleAna.o: simpleAna.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c simpleAna.cxx -o simpleAna.o 
 
+gstana_r: Rungst.cxx gstana.cxx gstana.h
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) -o gstana_r Rungst.cxx gstana.cxx $(ROOTFLAGS)
+	mv gstana_r ../bin
+
+grooana_r: Rungroo.cxx grooana.cxx grooana.h
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) -o grooana_r Rungroo.cxx grooana.cxx $(ROOTFLAGS)
+	mv grooana_r ../bin
+
+
 clean:
 	-rm -f ../bin/simpleAna
 	-rm -f simpleAna.o
+	-rm -f ../bin/gstana_r
+	-rm -f ../bin/grooana_r
 
 remake:
 	make clean
