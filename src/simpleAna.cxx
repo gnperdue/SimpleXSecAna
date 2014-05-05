@@ -1,7 +1,7 @@
 //____________________________________________________________________________
 /*!
-	Example based on `gtestEventLoop` by Costas Andreopoulos.
-	*/
+  Example based on `gtestEventLoop` by Costas Andreopoulos.
+  */
 //____________________________________________________________________________
 
 #include <string>
@@ -31,40 +31,40 @@ string gOptInpFilename;
 //___________________________________________________________________
 int main(int argc, char ** argv)
 {
-	GetCommandLineArgs (argc, argv);
+  GetCommandLineArgs (argc, argv);
 
-	//-- open the ROOT file and get the TTree & its header
-	TTree *           tree = 0;
-	NtpMCTreeHeader * thdr = 0;
+  //-- open the ROOT file and get the TTree & its header
+  TTree *           tree = 0;
+  NtpMCTreeHeader * thdr = 0;
 
-	TFile file(gOptInpFilename.c_str(),"READ");
+  TFile file(gOptInpFilename.c_str(),"READ");
 
-	tree = dynamic_cast <TTree *>           ( file.Get("gtree")  );
-	thdr = dynamic_cast <NtpMCTreeHeader *> ( file.Get("header") );
+  tree = dynamic_cast <TTree *>           ( file.Get("gtree")  );
+  thdr = dynamic_cast <NtpMCTreeHeader *> ( file.Get("header") );
 
-	if(!tree) return 1;
+  if(!tree) return 1;
 
-	NtpMCEventRecord * mcrec = 0;
-	tree->SetBranchAddress("gmcrec", &mcrec);
+  NtpMCEventRecord * mcrec = 0;
+  tree->SetBranchAddress("gmcrec", &mcrec);
 
-	int nev = (gOptNEvt > 0) ?
-		TMath::Min(gOptNEvt, (int)tree->GetEntries()) :
-		(int) tree->GetEntries();
+  int nev = (gOptNEvt > 0) ?
+    TMath::Min(gOptNEvt, (int)tree->GetEntries()) :
+    (int) tree->GetEntries();
 
-	//
-	// Loop over all events
-	//
-	for(int i = 0; i < nev; i++) {
+  //
+  // Loop over all events
+  //
+  for(int i = 0; i < nev; i++) {
 
-		// get next tree entry
-		tree->GetEntry(i);
+    // get next tree entry
+    tree->GetEntry(i);
 
-		// get the GENIE event
-		EventRecord &  event = *(mcrec->event);
+    // get the GENIE event
+    EventRecord &  event = *(mcrec->event);
 
-		//
-		// Put your event analysis code here 
-		//
+    //
+    // Put your event analysis code here 
+    //
     Interaction *in = event.Summary();
     const ProcessInfo &proc = in->ProcInfo();
     const XclsTag &xclsv = in->ExclTag();
@@ -76,75 +76,75 @@ int main(int argc, char ** argv)
     }
 
 
-		//
-		// Loop over all particles in this event
-		//
+    //
+    // Loop over all particles in this event
+    //
 
-		GHepParticle * p = 0;
-		TIter event_iter(&event);
+    GHepParticle * p = 0;
+    TIter event_iter(&event);
 
-		while((p=dynamic_cast<GHepParticle *>(event_iter.Next())))
-		{
-			//
-			// Put your event analysis code here 
-			//
-			// ... ... ... ... ...
-			// ... ... ... ... ...
-			//
-			//
+    while((p=dynamic_cast<GHepParticle *>(event_iter.Next())))
+    {
+      //
+      // Put your event analysis code here 
+      //
+      // ... ... ... ... ...
+      // ... ... ... ... ...
+      //
+      //
 
-			// EXAMPLE: Print out the energy of all final state pions.
-			if (p->Status() == kIStStableFinalState ) {
-				if (p->Pdg() == kPdgPi0 ||
-						p->Pdg() == kPdgPiP ||
-						p->Pdg() == kPdgPiM) 
-				{
-					LOG("myAnalysis", pNOTICE)  
-						<< "Got a : " << p->Name() << " with E = " << p->E() << " GeV"; 
-				}
-			}
+      // EXAMPLE: Print out the energy of all final state pions.
+      if (p->Status() == kIStStableFinalState ) {
+        if (p->Pdg() == kPdgPi0 ||
+            p->Pdg() == kPdgPiP ||
+            p->Pdg() == kPdgPiM) 
+        {
+          LOG("myAnalysis", pNOTICE)  
+            << "Got a : " << p->Name() << " with E = " << p->E() << " GeV"; 
+        }
+      }
 
-		}// end loop over particles	
+    }// end loop over particles	
 
-		// clear current mc event record
-		mcrec->Clear();
+    // clear current mc event record
+    mcrec->Clear();
 
-	}//end loop over events
+  }//end loop over events
 
-	// close input GHEP event file
-	file.Close();
+  // close input GHEP event file
+  file.Close();
 
-	LOG("myAnalysis", pNOTICE)  << "Done!";
+  LOG("myAnalysis", pNOTICE)  << "Done!";
 
-	return 0;
+  return 0;
 }
 //___________________________________________________________________
 void GetCommandLineArgs(int argc, char ** argv)
 {
-	LOG("myAnalysis", pINFO) << "Parsing commad line arguments";
+  LOG("myAnalysis", pINFO) << "Parsing commad line arguments";
 
-	CmdLnArgParser parser(argc,argv);
+  CmdLnArgParser parser(argc,argv);
 
-	// get GENIE event sample
-	if( parser.OptionExists('f') ) {
-		LOG("myAnalysis", pINFO) 
-			<< "Reading event sample filename";
-		gOptInpFilename = parser.ArgAsString('f');
-	} else {
-		LOG("myAnalysis", pFATAL) 
-			<< "Unspecified input filename - Exiting";
-		exit(1);
-	}
+  // get GENIE event sample
+  if( parser.OptionExists('f') ) {
+    LOG("myAnalysis", pINFO) 
+      << "Reading event sample filename";
+    gOptInpFilename = parser.ArgAsString('f');
+  } else {
+    LOG("myAnalysis", pFATAL) 
+      << "Unspecified input filename - Exiting";
+    exit(1);
+  }
 
-	// number of events to analyse
-	if( parser.OptionExists('n') ) {
-		LOG("myAnalysis", pINFO) 
-			<< "Reading number of events to analyze";
-		gOptNEvt = parser.ArgAsInt('n');
-	} else {
-		LOG("myAnalysis", pINFO)
-			<< "Unspecified number of events to analyze - Use all";
-		gOptNEvt = -1;
-	}
+  // number of events to analyse
+  if( parser.OptionExists('n') ) {
+    LOG("myAnalysis", pINFO) 
+      << "Reading number of events to analyze";
+    gOptNEvt = parser.ArgAsInt('n');
+  } else {
+    LOG("myAnalysis", pINFO)
+      << "Unspecified number of events to analyze - Use all";
+    gOptNEvt = -1;
+  }
 }
 //_________________________________________________________________________________
