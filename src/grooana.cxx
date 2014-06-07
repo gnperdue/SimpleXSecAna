@@ -11,8 +11,8 @@ void grooana::Loop()
   TObjArray * Hlist = new TObjArray(0);
 
   // Histograms
-  TH1D *h_evtXSec      = new TH1D("h_evtXSec","Cross Section;Cross Section;Counts per 50 bins",50,0,0.8); 
-  TH1D *h_evtDXSec     = new TH1D("h_evtDXSec","Differential Cross Section;Differential Cross Section;Counts per 50 bins",50,0,250); 
+  TH1D *h_evtXSec      = new TH1D("h_evtXSec","Cross Section;Cross Section;Counts per 50 bins",50,0,6); 
+  TH1D *h_evtDXSec     = new TH1D("h_evtDXSec","Differential Cross Section;Differential Cross Section;Counts per 50 bins",50,0,2.50); 
 
   Hlist->Add(h_evtXSec);
   Hlist->Add(h_evtDXSec);
@@ -23,7 +23,8 @@ void grooana::Loop()
   for (Long64_t jentry=0; jentry<nentries;jentry++) {
     Long64_t ientry = LoadTree(jentry);
     if (ientry < 0) break;
-    nb = fChain->GetEntry(jentry);   nbytes += nb;
+    nb = fChain->GetEntry(jentry);   
+    nbytes += nb;
 
     h_evtXSec->Fill(EvtXSec);
     h_evtDXSec->Fill(EvtDXSec);

@@ -14,8 +14,8 @@ void gstana::Loop()
   // Histograms
   TH1D *h_ev     = new TH1D("h_ev","Neutrino Energy;GeV;Counts per 500 MeV",20,0,10); 
   TH1D *h_neu    = new TH1D("h_neu","PDG Code;PDG Code;Counts per Code",40,-20,20); 
-  TH1D *h_Q2s    = new TH1D("h_Q2s","Q^{2}s;GeV^{2};Counts per 50 bins",50,0,1); 
-  TH1D *h_Q2     = new TH1D("h_Q2","Q^{2};GeV^{2};Counts per 50 bins",50,0,1); 
+  TH1D *h_Q2s    = new TH1D("h_Q2s","Q^{2}s;GeV^{2};Counts per 50 bins",50,0,4); 
+  TH1D *h_Q2     = new TH1D("h_Q2","Q^{2};GeV^{2};Counts per 50 bins",50,0,4); 
 
   Hlist->Add(h_ev);
   Hlist->Add(h_neu);
