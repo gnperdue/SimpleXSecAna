@@ -57,7 +57,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: simpleAna gstana_r grooana_r
+all: simpleAna countPi0 diffXSec gstana_r grooana_r
 
 simpleAna: simpleAna.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -66,6 +66,22 @@ simpleAna: simpleAna.o
 
 simpleAna.o: simpleAna.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c simpleAna.cxx -o simpleAna.o 
+
+countPi0: countPi0.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o countPi0 countPi0.cxx $(LDLIBS) 
+	mv countPi0 ../bin
+
+countPi0.o: countPi0.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c countPi0.cxx -o countPi0.o 
+
+diffXSec: diffXSec.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o diffXSec diffXSec.cxx $(LDLIBS) 
+	mv diffXSec ../bin
+
+diffXSec.o: diffXSec.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c diffXSec.cxx -o diffXSec.o 
 
 gstana_r: Rungst.cxx gstana.cxx gstana.h
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
