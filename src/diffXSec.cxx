@@ -49,7 +49,7 @@ int main(int argc, char ** argv)
 
   TObjArray * Hlist = new TObjArray(0);
 
-  int nbins = 16;
+  int nbins = 32;
   double elow = 0.0;
   double ehigh = 3.0;
   double ebinwid = (ehigh - elow) / nbins;
@@ -65,6 +65,9 @@ int main(int argc, char ** argv)
   Hlist->Add(h_dsigmadT);
   Hlist->Add(h_dsigmadcosT);
 
+  double total_xsec = 0.0;
+  double gt_point8_fraction = 0.0;
+
   //
   // Loop over all events
   //
@@ -79,12 +82,16 @@ int main(int argc, char ** argv)
 
     GHepParticle * fsl = event.FinalStatePrimaryLepton();
     double weight = event.XSec() / (1E-38 * units::cm2) / double(nev);
+    total_xsec += weight;
     double lE = fsl->Energy();
     double lPx = fsl->Px();
     double lPy = fsl->Py();
     double lPz = fsl->Pz();
     double lP = sqrt( lPx * lPx + lPy * lPy + lPz * lPz );
     double cost = lPz / lP;
+    if (cost > 0.8) {
+      gt_point8_fraction += weight;
+    }
 
  #if DEBUG
     LOG("myAnalysis", pNOTICE) << "---------------";
@@ -105,10 +112,15 @@ int main(int argc, char ** argv)
 
   }//end loop over events
 
+  gt_point8_fraction /= total_xsec;
+
   std::string histname = "$ANA_HIST_DIR/diffXSec.root";
   TFile * outputfile = new TFile(histname.c_str(),"RECREATE");
   Hlist->Write();
   outputfile->Close();
+
+  LOG("myAnalysis", pNOTICE) << "total xsec = " << total_xsec;
+  LOG("myAnalysis", pNOTICE) << "fraction at cos(t) > 0.8 = " << gt_point8_fraction;
 
   delete h_dsigmadT;
   delete h_dsigmadcosT;
