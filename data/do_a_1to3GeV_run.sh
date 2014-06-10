@@ -13,6 +13,6 @@ if [ ! -f $XSECSPLINEDIR/gxspl-vA-v2.8.0.xml ]; then
 fi
 
 gevgen -n $NUMEVT -p 14 -t 1000060120 -e 1,3 -r 61 \
-  --seed 2989819 \
+  -f '1/x' --seed 2989819 \
   --cross-sections $XSECSPLINEDIR/gxspl-vA-v2.8.0.xml >& run_log.txt
 
