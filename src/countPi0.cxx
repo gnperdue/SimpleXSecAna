@@ -81,12 +81,18 @@ int main(int argc, char ** argv)
     GHepParticle * nu = event.Probe();
     const ProcessInfo &proc = in->ProcInfo();
 
+    // check to see if the event is charged current
     bool iscc = proc.IsWeakCC();
+
+    // get the energy and cross section in units of 1e-38 cm^2
     double nue = nu->Energy();
     double nxsec = event.XSec() / (1E-38 * units::cm2);
+    // save the energy and cross section in a map keyed by energy
     exs.insert(std::pair<double,double>(nue, nxsec));
+    // compute the total cross section by adding events and dividing by "flux"
     double weight = nxsec / double(nev);
     total_xsec += weight;
+    // fill a histogram of energy with events weighted by cross section / flux
     h_dsigdE->Fill(nue, weight);
 #if DEBUG
     LOG("myAnalysis", pNOTICE)  << "neutrino e = " << nue;
@@ -102,6 +108,7 @@ int main(int argc, char ** argv)
     GHepParticle * p = 0;
     TIter event_iter(&event);
 
+    // count pions
     int npi0 = 0;
     int nchgdpi = 0;
     bool havePi0 = false;
