@@ -79,19 +79,20 @@ int main(int argc, char ** argv)
     // get the GENIE event
     EventRecord &  event = *(mcrec->event);
     Interaction *in = event.Summary();
+    // get the probe
+    GHepParticle *nu = event.Probe();
+    const TLorentzVector & p4nu  = *(nu->P4());
 
     // get the fs lepton
     GHepParticle * fsl = event.FinalStatePrimaryLepton();
+    const TLorentzVector & p4l  = *(fsl->P4());
     // get xsec in 1e-38 cm^2 and divide by flux
     double weight = event.XSec() / (1E-38 * units::cm2) / double(nev);
     total_xsec += weight;
-    // compute lepton angle
-    double lE = fsl->Energy();
-    double lPx = fsl->Px();
-    double lPy = fsl->Py();
-    double lPz = fsl->Pz();
-    double lP = sqrt( lPx * lPx + lPy * lPy + lPz * lPz );
-    double cost = lPz / lP;
+    // get the lepton energy
+    double lE = p4l.E();
+    // compute lepton angle w.r.t. the beam
+    double cost = TMath::Cos( p4nu.Angle(p4l.Vect()) );
     // what fraction is over cos\theta == 0.8?
     if (cost > 0.8) {
       gt_point8_fraction += weight;
@@ -101,10 +102,6 @@ int main(int argc, char ** argv)
     LOG("myAnalysis", pNOTICE) << "---------------";
     LOG("myAnalysis", pNOTICE) << "total xsec = " << event.XSec() / (1E-38 * units::cm2);
     LOG("myAnalysis", pNOTICE) << "weight = " << weight;
-    LOG("myAnalysis", pNOTICE) << "lE = " << lE;
-    LOG("myAnalysis", pNOTICE) << "lPx = " << lPx;
-    LOG("myAnalysis", pNOTICE) << "lPy = " << lPy;
-    LOG("myAnalysis", pNOTICE) << "lPz = " << lPz;
     LOG("myAnalysis", pNOTICE) << "cost = " << cost;
 #endif
 

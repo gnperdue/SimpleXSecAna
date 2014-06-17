@@ -49,9 +49,6 @@ int main(int argc, char ** argv)
     TMath::Min(gOptNEvt, (int)tree->GetEntries()) :
     (int) tree->GetEntries();
 
-  double e[nev], xs[nev];
-  std::map<double, double> exs;
-
   TObjArray * Hlist = new TObjArray(0);
 
   TH1D *h_npi0       = new TH1D("h_npi0","Number of Neutral Pions;Number;Counts",10,0,10); 
@@ -78,7 +75,7 @@ int main(int argc, char ** argv)
     // get the GENIE event
     EventRecord &  event = *(mcrec->event);
     Interaction *in = event.Summary();
-    GHepParticle * nu = event.Probe();
+    GHepParticle *nu = event.Probe();
     const ProcessInfo &proc = in->ProcInfo();
 
     // check to see if the event is charged current
@@ -87,8 +84,6 @@ int main(int argc, char ** argv)
     // get the energy and cross section in units of 1e-38 cm^2
     double nue = nu->Energy();
     double nxsec = event.XSec() / (1E-38 * units::cm2);
-    // save the energy and cross section in a map keyed by energy
-    exs.insert(std::pair<double,double>(nue, nxsec));
     // compute the total cross section by adding events and dividing by "flux"
     double weight = nxsec / double(nev);
     total_xsec += weight;
@@ -113,8 +108,7 @@ int main(int argc, char ** argv)
     int nchgdpi = 0;
     bool havePi0 = false;
 
-    while((p=dynamic_cast<GHepParticle *>(event_iter.Next())))
-    {
+    while((p=dynamic_cast<GHepParticle *>(event_iter.Next()))) {
       if (p->Status() == kIStStableFinalState ) {
         if (p->Pdg() == kPdgPi0) {
           npi0++;
@@ -140,16 +134,6 @@ int main(int argc, char ** argv)
 
   }//end loop over events
 
-  int indx = 0;
-  for (std::map<double,double>::iterator it=exs.begin(); it!=exs.end(); ++it) {
-    e[indx] = it->first;
-    xs[indx] = it->second;
-    ++indx;
-  }
-
-  TGraph* exs_gr = new TGraph(nev, e, xs);
-  Hlist->Add(exs_gr);
-
   LOG("myAnalysis", pNOTICE) << "total xsec = " << total_xsec;
   LOG("myAnalysis", pNOTICE) << "total xsec by integral = " << h_dsigdE->Integral();
   LOG("myAnalysis", pNOTICE) << "smallest observed xsec = " << smallest_xsec;
@@ -166,7 +150,6 @@ int main(int argc, char ** argv)
   delete h_npi0;
   delete h_npipi0only;
   delete h_dsigdE;
-  delete exs_gr;
   delete Hlist;
 
   // close input GHEP event file
