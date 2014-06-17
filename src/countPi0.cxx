@@ -59,11 +59,14 @@ int main(int argc, char ** argv)
   Hlist->Add(h_npipi0only);
   Hlist->Add(h_dsigdE);
 
+  // compute an average cross section first, then -> integral via MC
   double total_xsec = 0;
   double total_ccpi0_xsec = 0;
   double smallest_xsec = 1000.0;  // in units of 1e-38 cm^2
   double largest_xsec = 0.0;  // in units of 1e-38 cm^2
 
+  double max_e = 0;         // GeV
+  double min_e = 1000000;   // GeV
   //
   // Loop over all events
   //
@@ -83,10 +86,13 @@ int main(int argc, char ** argv)
 
     // get the energy and cross section in units of 1e-38 cm^2
     double nue = nu->Energy();
+    // get the range of energies
+    if (nue > max_e) max_e = nue;
+    if (nue < min_e) min_e = nue;
     double nxsec = event.XSec() / (1E-38 * units::cm2);
-    // compute the total cross section by adding events and dividing by "flux"
+    // compute the average cross section by adding events and dividing by "flux"
     double weight = nxsec / double(nev);
-    total_xsec += weight;
+    total_xsec += weight;  
     // fill a histogram of energy with events weighted by cross section / flux
     h_dsigdE->Fill(nue, weight);
 #if DEBUG
@@ -133,6 +139,10 @@ int main(int argc, char ** argv)
     mcrec->Clear();
 
   }//end loop over events
+
+  // get the total xsec from the average times the range
+  total_xsec *= (max_e - min_e);
+  total_ccpi0_xsec *= (max_e - min_e);
 
   LOG("myAnalysis", pNOTICE) << "total xsec = " << total_xsec;
   LOG("myAnalysis", pNOTICE) << "total xsec by integral = " << h_dsigdE->Integral();
