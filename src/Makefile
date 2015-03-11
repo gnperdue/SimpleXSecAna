@@ -57,7 +57,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: simpleAna countPi0 diffXSec gstana_r grooana_r
+all: simpleAna photonAna countPi0 diffXSec gstana_r grooana_r
 
 simpleAna: simpleAna.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -66,6 +66,14 @@ simpleAna: simpleAna.o
 
 simpleAna.o: simpleAna.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c simpleAna.cxx -o simpleAna.o 
+
+photonAna: photonAna.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o photonAna photonAna.cxx $(LDLIBS) 
+	mv photonAna ../bin
+
+photonAna.o: photonAna.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c photonAna.cxx -o photonAna.o 
 
 countPi0: countPi0.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
