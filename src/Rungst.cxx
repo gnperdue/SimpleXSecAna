@@ -23,17 +23,17 @@ int main(int argc,char** argv) {
   argv=theApp.Argv();
 
   char *s = getenv( "ANA_LIST_DIR" );
-  std::string filelist = s + std::string("/gst_list.txt");
+  std::string filelist = s + std::string("/diffractive_events_file_list.txt");
 
   std::cout << "List file = " << filelist << std::endl;
   std::ifstream filestream( filelist.c_str() );
   TChain* chain = new TChain("gst");
-  Char_t fname[200];
+  // Char_t fname[200];
   Char_t filename[200];
   while ( filestream >> filename ){
-    sprintf(fname, "$ANA_DATA_DIR/%s",filename);
-    std::cout << "  Adding " << fname << " to list..." << std::endl;
-    chain->Add(fname);
+    // sprintf(fname, filename);
+    std::cout << "  Adding " << filename << " to list..." << std::endl;
+    chain->Add(filename);
   }
 
   std::cout << "Make new gstana pointer..." << std::endl;

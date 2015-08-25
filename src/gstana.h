@@ -1,8 +1,8 @@
 //////////////////////////////////////////////////////////
 // This class has been automatically generated on
-// Sun May  4 19:26:56 2014 by ROOT version 5.34/08
+// Tue Aug 25 11:30:45 2015 by ROOT version 5.34/05
 // from TTree gst/GENIE Summary Event Tree
-// found on file: gntp.100.gst.root
+// found on file: /pnfs/minerva/scratch/users/minervapro/mc_production_genie_DFR_v10r8p4/grid/central_value/minerva/genie/v10r8p4/00/01/00/00/SIM_minerva_00010000_0001_GENIE_v10r8p4_DFR.root
 //////////////////////////////////////////////////////////
 
 #ifndef gstana_h
@@ -101,13 +101,13 @@ public :
    Double_t        pyi[1];   //[ni]
    Double_t        pzi[1];   //[ni]
    Int_t           nf;
-   Int_t           pdgf[11];   //[nf]
-   Double_t        Ef[11];   //[nf]
-   Double_t        pxf[11];   //[nf]
-   Double_t        pyf[11];   //[nf]
-   Double_t        pzf[11];   //[nf]
-   Double_t        pf[11];   //[nf]
-   Double_t        cthf[11];   //[nf]
+   Int_t           pdgf[10];   //[nf]
+   Double_t        Ef[10];   //[nf]
+   Double_t        pxf[10];   //[nf]
+   Double_t        pyf[10];   //[nf]
+   Double_t        pzf[10];   //[nf]
+   Double_t        pf[10];   //[nf]
+   Double_t        cthf[10];   //[nf]
    Double_t        vtxx;
    Double_t        vtxy;
    Double_t        vtxz;
@@ -228,9 +228,9 @@ gstana::gstana(TTree *tree) : fChain(0)
 // if parameter tree is not specified (or zero), connect the file
 // used to generate this class and read the Tree.
    if (tree == 0) {
-      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("gntp.100.gst.root");
+      TFile *f = (TFile*)gROOT->GetListOfFiles()->FindObject("/pnfs/minerva/scratch/users/minervapro/mc_production_genie_DFR_v10r8p4/grid/central_value/minerva/genie/v10r8p4/00/01/00/00/SIM_minerva_00010000_0001_GENIE_v10r8p4_DFR.root");
       if (!f || !f->IsOpen()) {
-         f = new TFile("gntp.100.gst.root");
+         f = new TFile("/pnfs/minerva/scratch/users/minervapro/mc_production_genie_DFR_v10r8p4/grid/central_value/minerva/genie/v10r8p4/00/01/00/00/SIM_minerva_00010000_0001_GENIE_v10r8p4_DFR.root");
       }
       f->GetObject("gst",tree);
 
@@ -351,20 +351,20 @@ void gstana::Init(TTree *tree)
    fChain->SetBranchAddress("niem", &niem, &b_niem);
    fChain->SetBranchAddress("niother", &niother, &b_niother);
    fChain->SetBranchAddress("ni", &ni, &b_ni);
-   fChain->SetBranchAddress("pdgi", pdgi, &b_pdgi);
-   fChain->SetBranchAddress("resc", resc, &b_resc);
-   fChain->SetBranchAddress("Ei", Ei, &b_Ei);
-   fChain->SetBranchAddress("pxi", pxi, &b_pxi);
-   fChain->SetBranchAddress("pyi", pyi, &b_pyi);
-   fChain->SetBranchAddress("pzi", pzi, &b_pzi);
+   fChain->SetBranchAddress("pdgi", &pdgi, &b_pdgi);
+   fChain->SetBranchAddress("resc", &resc, &b_resc);
+   fChain->SetBranchAddress("Ei", &Ei, &b_Ei);
+   fChain->SetBranchAddress("pxi", &pxi, &b_pxi);
+   fChain->SetBranchAddress("pyi", &pyi, &b_pyi);
+   fChain->SetBranchAddress("pzi", &pzi, &b_pzi);
    fChain->SetBranchAddress("nf", &nf, &b_nf);
-   fChain->SetBranchAddress("pdgf", pdgf, &b_pdgf);
-   fChain->SetBranchAddress("Ef", Ef, &b_Ef);
-   fChain->SetBranchAddress("pxf", pxf, &b_pxf);
-   fChain->SetBranchAddress("pyf", pyf, &b_pyf);
-   fChain->SetBranchAddress("pzf", pzf, &b_pzf);
-   fChain->SetBranchAddress("pf", pf, &b_pf);
-   fChain->SetBranchAddress("cthf", cthf, &b_cthf);
+   fChain->SetBranchAddress("pdgf", &pdgf, &b_pdgf);
+   fChain->SetBranchAddress("Ef", &Ef, &b_Ef);
+   fChain->SetBranchAddress("pxf", &pxf, &b_pxf);
+   fChain->SetBranchAddress("pyf", &pyf, &b_pyf);
+   fChain->SetBranchAddress("pzf", &pzf, &b_pzf);
+   fChain->SetBranchAddress("pf", &pf, &b_pf);
+   fChain->SetBranchAddress("cthf", &cthf, &b_cthf);
    fChain->SetBranchAddress("vtxx", &vtxx, &b_vtxx);
    fChain->SetBranchAddress("vtxy", &vtxy, &b_vtxy);
    fChain->SetBranchAddress("vtxz", &vtxz, &b_vtxz);

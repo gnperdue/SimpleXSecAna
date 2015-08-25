@@ -12,15 +12,10 @@ void gstana::Loop()
   TObjArray * Hlist = new TObjArray(0);
 
   // Histograms
-  TH1D *h_ev     = new TH1D("h_ev","Neutrino Energy;GeV;Counts per 500 MeV",20,0,10); 
-  TH1D *h_neu    = new TH1D("h_neu","PDG Code;PDG Code;Counts per Code",40,-20,20); 
-  TH1D *h_Q2s    = new TH1D("h_Q2s","Q^{2}s;GeV^{2};Counts per 50 bins",50,0,4); 
-  TH1D *h_Q2     = new TH1D("h_Q2","Q^{2};GeV^{2};Counts per 50 bins",50,0,4); 
+  TH1D *h_proton_e = new TH1D("h_proton_e",
+      "Proton Energy;GeV;Counts per 100 MeV",20,0,2); 
 
-  Hlist->Add(h_ev);
-  Hlist->Add(h_neu);
-  Hlist->Add(h_Q2s);
-  Hlist->Add(h_Q2);
+  Hlist->Add(h_proton_e);
 
   Long64_t nentries = fChain->GetEntriesFast();
 
@@ -30,21 +25,15 @@ void gstana::Loop()
     if (ientry < 0) break;
     nb = fChain->GetEntry(jentry);   nbytes += nb;
 
-    h_ev->Fill(Ev);
-    h_neu->Fill(neu);
-    h_Q2s->Fill(Q2s);
-    h_Q2->Fill(Q2);
+    h_proton_e->Fill(1.0);
 
   } // end event for loop
 
-  std::string histname = "$ANA_HIST_DIR/qel_gstana.root";
+  std::string histname = "$ANA_HIST_DIR/dfr_gstana.root";
   TFile * outputfile = new TFile(histname.c_str(),"RECREATE");
   Hlist->Write();
   outputfile->Close();
 
-  delete h_ev;
-  delete h_neu;
-  delete h_Q2s;
-  delete h_Q2;
+  delete h_proton_e;
 
 } // end of Loop() function
