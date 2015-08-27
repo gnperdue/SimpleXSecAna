@@ -49,6 +49,7 @@ int main(int argc, char ** argv)
   // Set up Histograms
   //
   TObjArray * Hlist = new TObjArray(0);
+  char axes1[200];
 
   TH1D *h_proton_e = new TH1D("h_proton_e",
       "Proton Energy;GeV;Counts per 25 MeV",40,0.8,1.8); 
@@ -60,12 +61,23 @@ int main(int argc, char ** argv)
       "t;GeV^{2};Counts per 0.02 GeV^{2}",50,0,1); 
   TH1D *h_t_over_proton_ke = new TH1D("h_t_over_proton_ke",
       "t/T_{p};GeV;Counts per 40 MeV",50,0,2); 
+  TH1D *h_w = new TH1D("h_w",
+      "W;GeV;Counts per 0.1 GeV",80,0,8); 
+
+  int nbins = 80;
+  double w_low = 0.0;
+  double w_high = 40.0;
+  double wbinwid = (w_high - w_low) / nbins;
+  sprintf(axes1, "Differential Cross Section;W^{2} (GeV^{2});#frac{d#sigma}{dW^{2}} #times 10^{40} cm^{2} / GeV^{2}");
+  TH1D *h_dsigmadW2 = new TH1D("h_dsigmadW2", axes1, nbins, w_low, w_high); 
 
   Hlist->Add(h_proton_e);
   Hlist->Add(h_proton_ke);
   Hlist->Add(h_pi0_e);
   Hlist->Add(h_t);
   Hlist->Add(h_t_over_proton_ke);
+  Hlist->Add(h_w);
+  Hlist->Add(h_dsigmadW2);
 
   //
   // Loop over events
@@ -74,29 +86,24 @@ int main(int argc, char ** argv)
 
     // get next tree entry
     chain->GetEntry(i);
-
     if (i % 1000 == 0) {
       std::cout << "Event " << i << std::endl;
     }
 
     // get the GENIE event
+    // all the events in the files are weak NC Coherent, DFR
     EventRecord &event = *(mcrec->event);
     Interaction *in = event.Summary();
     GHepParticle *nu = event.Probe();
     const ProcessInfo &proc = in->ProcInfo();
 
-    // all the events are weak NC Coherent, DFR
-    // we want proton energy for nu_e events
-
     int pdg = nu->Pdg();
-
-    if (pdg == 14 || pdg == -14) continue;  // muon-type 
-    if (pdg == 16 || pdg == -16) continue;  // tau-type 
 
     GHepParticle * p = 0;
     TIter event_iter(&event);
 
     h_t->Fill(in->KinePtr()->t(true));
+    h_w->Fill(in->KinePtr()->W(true));
 
     while ((p=dynamic_cast<GHepParticle *>(event_iter.Next()))) {
       if (p->Status() == kIStStableFinalState ) {
@@ -117,6 +124,11 @@ int main(int argc, char ** argv)
       }
     }
 
+    // get xsec in 1e-40 cm^2 and divide by flux
+    double weight = 
+      event.XSec() / (1E-40 * units::cm2) / double(nEntries) / wbinwid;
+    h_dsigmadW2->Fill(in->KinePtr()->W(true)*in->KinePtr()->W(true), 
+        weight);
 
     // clear current mc event record
     mcrec->Clear();
