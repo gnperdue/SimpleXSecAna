@@ -23,10 +23,6 @@ if [ ! -d $ANA_RUN_DIR ]; then
   echo "Directory $ANA_RUN_DIR does not exist! Creating..."
   mkdir run
 fi
-if [ ! -d $ANA_LIST_DIR ]; then
-  echo "Directory $ANA_LIST_DIR does not exist! Creating..."
-  mkdir list
-fi
 if [ ! -d $ANA_HIST_DIR ]; then
   echo "Directory $ANA_HIST_DIR does not exist! Creating..."
   mkdir hist
