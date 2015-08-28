@@ -57,15 +57,15 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: simpleAna countPi0 diffXSec gstana_r grooana_r
+all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r
 
-simpleAna: simpleAna.o 
+diffractiveStudy: diffractiveStudy.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o simpleAna simpleAna.cxx $(LDLIBS) 
-	mv simpleAna ../bin
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o diffractiveStudy diffractiveStudy.cxx $(LDLIBS) 
+	mv diffractiveStudy ../bin
 
-simpleAna.o: simpleAna.cxx
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c simpleAna.cxx -o simpleAna.o 
+diffractiveStudy.o: diffractiveStudy.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c diffractiveStudy.cxx -o diffractiveStudy.o 
 
 countPi0: countPi0.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -95,8 +95,8 @@ grooana_r: Rungroo.cxx grooana.cxx grooana.h
 
 
 clean:
-	-rm -f ../bin/simpleAna
-	-rm -f simpleAna.o
+	-rm -f ../bin/diffractiveStudy
+	-rm -f diffractiveStudy.o
 	-rm -f ../bin/gstana_r
 	-rm -f ../bin/grooana_r
 
