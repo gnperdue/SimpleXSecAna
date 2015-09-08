@@ -1,4 +1,4 @@
-make_plot() {
+make_plot_hw2() {
   gROOT->Reset();
 
   TCanvas *c1 = new TCanvas("c1","c1",2000,1200);
