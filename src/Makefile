@@ -57,7 +57,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r
+all: diffractiveStudy countPi0 diffXSec 
 
 diffractiveStudy: diffractiveStudy.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -83,22 +83,10 @@ diffXSec: diffXSec.o
 diffXSec.o: diffXSec.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c diffXSec.cxx -o diffXSec.o 
 
-gstana_r: Rungst.cxx gstana.cxx gstana.h
-	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) -o gstana_r Rungst.cxx gstana.cxx $(ROOTFLAGS)
-	mv gstana_r ../bin
-
-grooana_r: Rungroo.cxx grooana.cxx grooana.h
-	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) -o grooana_r Rungroo.cxx grooana.cxx $(ROOTFLAGS)
-	mv grooana_r ../bin
-
 
 clean:
-	-rm -f ../bin/diffractiveStudy
-	-rm -f diffractiveStudy.o
-	-rm -f ../bin/gstana_r
-	-rm -f ../bin/grooana_r
+	-rm -f ../bin/*
+	-rm -f *.o
 
 remake:
 	make clean
