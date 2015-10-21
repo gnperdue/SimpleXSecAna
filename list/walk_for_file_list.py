@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 from __future__ import print_function
 import os
 
@@ -28,11 +27,10 @@ def write_list_of_files_to_file(list_of_files, filenam):
 
 if __name__ == '__main__':
 
-    data_path  = '/pnfs/minerva/scratch/users/minervapro'
-    data_path += '/mc_production_genie_DFR_v10r8p4/grid/central_value/minerva'
-    data_path += '/genie/v10r8p4/00/01/00/'
+    data_path = '/genie/app/perdue/GENIE/lamp_svn_286/lamp/genie_runs'
 
-    search_string = r'(.*)v10r8p4_DFR_ghep.root'
+    # try to match: any name + <4 digit number> + '.ghep.root'
+    search_string = r'(.*)[0-9]{4}\.ghep\.root'
 
     files = enumerate_files(data_path, search_string)
-    write_list_of_files_to_file(files, 'diffractive_events_file_list.txt')
+    write_list_of_files_to_file(files, 'ghep_file_list.txt')
