@@ -2,7 +2,7 @@
 
 
 export ANA_BASE_DIR=$PWD
-export ANA_DATA_DIR=${ANA_BASE_DIR}/data
+export ANA_DATA_DIR=/genie/app/perdue/GENIE/lamp_svn_286/lamp/genie_runs
 export ANA_SRC_DIR=${ANA_BASE_DIR}/src
 export ANA_BIN_DIR=${ANA_BASE_DIR}/bin
 export ANA_RUN_DIR=${ANA_BASE_DIR}/run

@@ -57,23 +57,15 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: diffractiveStudy countPi0 diffXSec 
+all: transStudy diffXSec 
 
-diffractiveStudy: diffractiveStudy.o 
+transStudy: transStudy.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o diffractiveStudy diffractiveStudy.cxx $(LDLIBS) 
-	mv diffractiveStudy ../bin
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o transStudy transStudy.cxx $(LDLIBS) 
+	mv transStudy ../bin
 
-diffractiveStudy.o: diffractiveStudy.cxx
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c diffractiveStudy.cxx -o diffractiveStudy.o 
-
-countPi0: countPi0.o 
-	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o countPi0 countPi0.cxx $(LDLIBS) 
-	mv countPi0 ../bin
-
-countPi0.o: countPi0.cxx
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c countPi0.cxx -o countPi0.o 
+transStudy.o: transStudy.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c transStudy.cxx -o transStudy.o 
 
 diffXSec: diffXSec.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
