@@ -91,9 +91,9 @@ int main(int argc, char ** argv)
     hist_low = 0.0;
     hist_high = 10.0;
     double npi0binwid = (hist_high - hist_low) / nbins;
-    sprintf(axes1, "#nu Differential Cross Section;N_{#pi^0};#frac{d#sigma}{dN_{#pi^0}} #times 10^{40} cm^{2}");
+    sprintf(axes1, "#nu Differential Cross Section;N_{#pi^{0}};#frac{d#sigma}{dN_{#pi^{0}}} #times 10^{40} cm^{2}");
     TH1D *h_nu_dsigmadnpi0 = new TH1D("h_nu_dsigmadnpi0", axes1, nbins, hist_low, hist_high); 
-    sprintf(axes1, "#bar{#nu} Differential Cross Section;N_{#pi^0};#frac{d#sigma}{dN_{#pi^0}} #times 10^{40} cm^{2}");
+    sprintf(axes1, "#bar{#nu} Differential Cross Section;N_{#pi^{0}};#frac{d#sigma}{dN_{#pi^{0}}} #times 10^{40} cm^{2}");
     TH1D *h_antinu_dsigmadnpi0 = new TH1D("h_antinu_dsigmadnpi0", axes1, nbins, hist_low, hist_high); 
 
     Hlist->Add(h_nu_dsigmadW2);
@@ -111,8 +111,7 @@ int main(int argc, char ** argv)
     //
     // Loop over events
     //
-    // for(Long64_t i = 0; i < nEntries; i++) {
-    for(Long64_t i = 0; i < 1000; i++) {
+    for(Long64_t i = 0; i < nEntries; i++) {
 
         // get next tree entry
         chain->GetEntry(i);
