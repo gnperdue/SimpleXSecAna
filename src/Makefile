@@ -96,7 +96,9 @@ grooana_r: Rungroo.cxx grooana.cxx grooana.h
 
 clean:
 	-rm -f ../bin/diffractiveStudy
-	-rm -f diffractiveStudy.o
+	-rm -f ../bin/countPi0
+	-rm -f ../bin/diffXSec
+	-rm -f *.o
 	-rm -f ../bin/gstana_r
 	-rm -f ../bin/grooana_r
 
