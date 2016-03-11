@@ -53,7 +53,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGQEL \
 					-lGQPM \
 					-lGRegistry \
-					-lGReinSeghal \
+					-lGReinSehgal \
 					-lGRES \
 					-lGUtils 
 
