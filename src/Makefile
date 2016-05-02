@@ -57,15 +57,15 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r
+all: cohValidation countPi0 diffXSec gstana_r grooana_r
 
-diffractiveStudy: diffractiveStudy.o 
+cohValidation: cohValidation.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o diffractiveStudy diffractiveStudy.cxx $(LDLIBS) 
-	mv diffractiveStudy ../bin
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o cohValidation cohValidation.cxx $(LDLIBS) 
+	mv cohValidation ../bin
 
-diffractiveStudy.o: diffractiveStudy.cxx
-	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c diffractiveStudy.cxx -o diffractiveStudy.o 
+cohValidation.o: cohValidation.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c cohValidation.cxx -o cohValidation.o 
 
 countPi0: countPi0.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -95,8 +95,8 @@ grooana_r: Rungroo.cxx grooana.cxx grooana.h
 
 
 clean:
-	-rm -f ../bin/diffractiveStudy
-	-rm -f diffractiveStudy.o
+	-rm -f ../bin/cohValidation
+	-rm -f cohValidation.o
 	-rm -f ../bin/gstana_r
 	-rm -f ../bin/grooana_r
 
