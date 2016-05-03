@@ -21,6 +21,24 @@
 using std::string;
 using namespace genie;
 
+void h12ascii(TH1* h, const char* fname)
+{
+    std::ofstream myfile;
+    myfile.open(fname);
+
+    Int_t n = h->GetNbinsX();
+    for (Int_t i=1; i<=n; i++) {
+        myfile << h->GetBinLowEdge(i)+h->GetBinWidth(i)/2
+            << ", " << h->GetBinContent(i)
+            << std::endl;
+        // printf("%g, %g\n",
+        //         h->GetBinLowEdge(i)+h->GetBinWidth(i)/2,
+        //         h->GetBinContent(i));
+    }
+
+    myfile.close();
+}
+
 //___________________________________________________________________
 int main(int argc, char ** argv)
 {
@@ -37,12 +55,12 @@ int main(int argc, char ** argv)
     //
     // Prepare and load the chain of GHEP files
     //
-    char *s = getenv( "ANA_LIST_DIR" );
-    std::string filelist = s + std::string("/") + filename;
+    char *s = getenv( "ANA_DATA_DIR" );
+    std::string filefullpath = s + std::string("/") + filename;
 
     TChain* chain = new TChain("gtree");
     std::cout << "  Adding " << filename << " to chain..." << std::endl;
-    chain->Add(filename.c_str());
+    chain->Add(filefullpath.c_str());
 
     Long64_t nEntries = chain->GetEntries(); 
     std::cout << "There are " << nEntries << " in the chain." << std::endl;
@@ -55,11 +73,6 @@ int main(int argc, char ** argv)
     //
     TObjArray * Hlist = new TObjArray(0);
     char axes1[200];
-
-    TH1D *h_pion_e_15deg = new TH1D("h_pion_e_15deg",
-            "Pion Energy at 15 degrees;GeV;Counts per 25 MeV",50,0.0,1.5); 
-    TH1D *h_pion_e_30deg = new TH1D("h_pion_e_30deg",
-            "Pion Energy at 15 degrees;GeV;Counts per 25 MeV",50,0.0,1.5); 
 
     int nbins = 50;
     double ke_low = 0.0;
@@ -100,10 +113,10 @@ int main(int argc, char ** argv)
         while ((p=dynamic_cast<GHepParticle *>(event_iter.Next()))) {
             if (p->Status() == kIStStableFinalState ) {
                 int ppdg = p->Pdg();
-                double ke = p->KinE();
-                double angle = p->GetP4()->Theta()/units::degree;
                 // we're only looking at coherent events, so we can be sloppy
                 if (ppdg == kPdgPiP || ppdg == kPdgPi0 || ppdg == kPdgPiM) {
+                    double ke = p->KinE();
+                    double angle = p->GetP4()->Theta()/units::degree;
                     // get xsec in 1e-40 cm^2 and divide by flux
                     double weight = 
                         event.XSec() / (1E-40 * units::cm2) / double(nEntries) / kebinwid;
@@ -112,7 +125,7 @@ int main(int argc, char ** argv)
                         h_dsigmadTpi_15deg->Fill(ke, weight);
                     }
                     if (angle > 29.0 && angle < 31.0) {
-                        h_dsigmadTpi_15deg->Fill(ke, weight);
+                        h_dsigmadTpi_30deg->Fill(ke, weight);
                     }
                 }
             }
@@ -130,6 +143,14 @@ int main(int argc, char ** argv)
     TFile * outputfile = new TFile(histname.c_str(),"RECREATE");
     Hlist->Write();
     outputfile->Close();
+
+    char *hd = getenv( "ANA_HIST_DIR" );
+    std::string fname_all = hd + std::string("/") + "coh_valid_allangles.csv";
+    std::string fname_15 = hd + std::string("/") + "coh_valid_15deg.csv";
+    std::string fname_30 = hd + std::string("/") + "coh_valid_30deg.csv";
+    h12ascii(h_dsigmadTpi, fname_all.c_str());
+    h12ascii(h_dsigmadTpi_15deg, fname_15.c_str());
+    h12ascii(h_dsigmadTpi_30deg, fname_30.c_str());
 
     delete h_dsigmadTpi;
     delete h_dsigmadTpi_15deg;
