@@ -11,6 +11,10 @@ export ANA_HIST_DIR=${ANA_BASE_DIR}/hist
 export ANA_PLOT_DIR=${ANA_BASE_DIR}/plot
 export ANA_PS_DIR=${ANA_BASE_DIR}/ps
 
+# export LOG4CPP_INC=/grid/fermiapp/minerva/software_releases/v10r8p11/minerva/EXTERNAL/EXTERNAL_v10r8p11/LOG4CPP/include/
+# export LOG4CPP_LIB=/grid/fermiapp/minerva/software_releases/v10r8p11/minerva/EXTERNAL/EXTERNAL_v10r8p11/LOG4CPP/x86_64-slc6-gcc44-opt/
+# export PYTHIA6=/grid/fermiapp/minerva/software_releases/v10r8p11/minerva/EXTERNAL/EXTERNAL_v10r8p11/PYTHIA6/lib/
+
 if [ ! -d $ANA_DATA_DIR ]; then
   echo "Directory $ANA_DATA_DIR does not exist! Creating..."
   mkdir data
