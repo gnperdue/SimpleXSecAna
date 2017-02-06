@@ -57,7 +57,7 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r
+all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r qetotalxsec
 
 diffractiveStudy: diffractiveStudy.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -92,6 +92,14 @@ grooana_r: Rungroo.cxx grooana.cxx grooana.h
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
 	$(CXX) -o grooana_r Rungroo.cxx grooana.cxx $(ROOTFLAGS)
 	mv grooana_r ../bin
+
+qetotalxsec: qetotalxsec.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o qetotalxsec qetotalxsec.cxx $(LDLIBS) 
+	mv qetotalxsec ../bin
+
+qetotalxsec.o: qetotalxsec.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c qetotalxsec.cxx -o qetotalxsec.o 
 
 
 clean:
