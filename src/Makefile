@@ -57,7 +57,8 @@ LDLIBS += -L$(GENIE)/lib \
 					-lGRES \
 					-lGUtils 
 
-all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r qetotalxsec
+all: diffractiveStudy countPi0 diffXSec gstana_r grooana_r qetotalxsec \
+	qelikediff
 
 diffractiveStudy: diffractiveStudy.o 
 	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
@@ -101,14 +102,23 @@ qetotalxsec: qetotalxsec.o
 qetotalxsec.o: qetotalxsec.cxx
 	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c qetotalxsec.cxx -o qetotalxsec.o 
 
+qelikediff: qelikediff.o 
+	@if test -d ../bin; then echo BinOk >& /dev/null ; else mkdir -p ../bin; fi
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTFLAGS) -o qelikediff qelikediff.cxx $(LDLIBS) 
+	mv qelikediff ../bin
+
+qelikediff.o: qelikediff.cxx
+	$(CXX) $(CPPFLAGS) $(INCLUDE) $(ROOTINC) -c qelikediff.cxx -o qelikediff.o 
 
 clean:
+	-rm -f *.o
 	-rm -f ../bin/diffractiveStudy
 	-rm -f ../bin/countPi0
 	-rm -f ../bin/diffXSec
-	-rm -f *.o
 	-rm -f ../bin/gstana_r
 	-rm -f ../bin/grooana_r
+	-rm -f ../bin/qetotalxsec
+	-rm -f ../bin/qelikediff
 
 remake:
 	make clean
