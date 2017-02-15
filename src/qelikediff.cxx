@@ -113,28 +113,6 @@ bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
     return angle < angle_cut;
 }
 
-//____________________________________________________________________________
-// normalize to cross section per nucleon
-void normalize(TH1* h, const double factor) {
-    h->Sumw2();
-    for (int i = 1; i <= h->GetNbinsX(); i++) {
-        h->SetBinContent(i, h->GetBinContent(i) * factor);
-        h->SetBinError(i, h->GetBinError(i) * factor);
-    }
-}
-
-//____________________________________________________________________________
-// normalize to cross section per nucleon
-void normalize2D(TH2* h, const double factor) {
-    h->Sumw2();
-    for (int i = 1; i <= h->GetNbinsX(); i++) {
-        for (int j = 1; j <= h->GetNbinsY(); j++) {
-            h->SetBinContent(i, j, h->GetBinContent(i, j) * factor );
-            h->SetBinError(i, j, h->GetBinError(i, j) * factor );
-        }
-    }
-}
-
 //___________________________________________________________________
 int main(int argc, char ** argv)
 {
@@ -283,24 +261,34 @@ int main(int argc, char ** argv)
         const Kinematics &kine = event.Summary()->Kine();
 
         double ccqe_true_total_xsec = 0.0;
+        double ccqe_like_total_xsec = 0.0;
 
         // is this a signal event?
         bool is_ccqe_true_event = is_ccqe_true(event, signal_pdg);
         bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg);
 
         // get xsec in 1e-39 cm^2 
-        if (is_ccqe_true_event) {
+        if (is_ccqe_true_event || is_ccqe_like_event) {
             // TODO: get Q2 from lepton vars
             double Q2 = kine.Q2(true);   // think we want selected == true
-            double bin_wid = get_bin_width(Q2, q2_bins, q2_nbins);
-            double weight = 
-                event.XSec() / (1E-39 * units::cm2) / bin_wid / double(nev);
-            ccqe_true_total_xsec += weight;
+            double q2_bin_wid = get_bin_width(Q2, q2_bins, q2_nbins);
+            double q2_weight = 
+                event.XSec() / (1E-39 * units::cm2) / q2_bin_wid / double(nev);
 
-            q2_true_nocut->Fill(Q2, weight);
+            if (is_ccqe_true_event) {
+                ccqe_true_total_xsec += q2_weight;
+                q2_true_nocut->Fill(Q2, q2_weight);
+                if (angle_cut(event)) {
+                    q2_true_cut->Fill(Q2, q2_weight);
+                }
+            }
 
-            if (angle_cut(event)) {
-                q2_true_cut->Fill(Q2, weight);
+            if (is_ccqe_like_event) {
+                ccqe_like_total_xsec += q2_weight;
+                q2_like_nocut->Fill(Q2, q2_weight);
+                if (angle_cut(event)) {
+                    q2_like_cut->Fill(Q2, q2_weight);
+                }
             }
         }
 
