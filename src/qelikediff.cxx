@@ -102,14 +102,21 @@ bool is_ccqe_like(
 }
 
 //____________________________________________________________________________
-// muon angle cut (rotated into beam coordinates)
-bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
-    angle_cut *= (constants::kPi / 180.);
+// muon angle
+double get_angle(const EventRecord &event) {
     const TLorentzVector &p4fsl = *(event.FinalStatePrimaryLepton()->P4());
     TVector3 beam(0.0, 0.0, 1.0);
     // here, in pure generator case, angle is 0
     // beam.RotateX(3.0 * constants::kPi / 180.0);
     double angle = p4fsl.Angle(beam);
+    return angle;
+}
+
+//____________________________________________________________________________
+// muon angle cut (rotated into beam coordinates)
+bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
+    angle_cut *= (constants::kPi / 180.);
+    double angle = get_angle(event);
     return angle < angle_cut;
 }
 
@@ -153,7 +160,7 @@ int main(int argc, char ** argv)
         return 0;
     }
 
-    const double Ebinding = 30;
+    const double Ebinding = 0.030;
 
     //
     // set up histogram bins - this is ugly, but, okay, whatever
@@ -195,8 +202,12 @@ int main(int argc, char ** argv)
 
     const unsigned int enu_nbins = sizeof(enu_bins) / sizeof(enu_bins[0]) - 1;
     const unsigned int q2_nbins = sizeof(q2_bins) / sizeof(q2_bins[0]) - 1;
-    const unsigned int pt_nbins = sizeof(pt_bins) / sizeof(pt_bins[0]) - 1;
-    const unsigned int pl_nbins = sizeof(pl_bins) / sizeof(pl_bins[0]) - 1;
+    const unsigned int pt_nbins = signal_pdg == 14 ? 
+        sizeof(nu_pt_bins) / sizeof(nu_pt_bins[0]) - 1 :
+        sizeof(nubar_pt_bins) / sizeof(nubar_pt_bins[0]) - 1;
+    const unsigned int pl_nbins = signal_pdg == 14 ? 
+        sizeof(nu_pl_bins) / sizeof(nu_pl_bins[0]) - 1 :
+        sizeof(nubar_pl_bins) / sizeof(nubar_pl_bins[0]) - 1;
 
     //
     // Prepare and load the chain of GHEP files
@@ -228,22 +239,64 @@ int main(int argc, char ** argv)
 
     char axes1[200];
 
-    sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_true_nocut = new TH1D("q2_true_nocut", axes1, q2_nbins, q2_bins);
 
-    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_true_cut = new TH1D("q2_true_cut", axes1, q2_nbins, q2_bins);
 
-    sprintf(axes1, "Differential cross section - QE-like;Q^{2} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - QE-like;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_like_nocut = new TH1D("q2_like_nocut", axes1, q2_nbins, q2_bins);
 
-    sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_like_cut = new TH1D("q2_like_cut", axes1, q2_nbins, q2_bins);
+
+    sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});E_{#nu-QE} (GeV)");
+    TH2D* enuq2_true_nocut = new TH2D("enuq2_true_nocut",
+            axes1, q2_nbins, q2_bins, enu_nbins, enu_bins);
+
+    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2}_{QE} (GeV^{2});E_{#nu-QE} (GeV)");
+    TH2D* enuq2_true_cut = new TH2D("enuq2_true_cut",
+            axes1, q2_nbins, q2_bins, enu_nbins, enu_bins);
+
+    sprintf(axes1, "Differential cross section - QE-like;Q^{2}_{QE} (GeV^{2});E_{#nu-QE} (GeV)");
+    TH2D* enuq2_like_nocut = new TH2D("enuq2_like_nocut",
+            axes1, q2_nbins, q2_bins, enu_nbins, enu_bins);
+
+    sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2}_{QE} (GeV^{2});E_{#nu-QE} (GeV)");
+    TH2D* enuq2_like_cut = new TH2D("enuq2_like_cut",
+            axes1, q2_nbins, q2_bins, enu_nbins, enu_bins);
+
+    sprintf(axes1, "Differential cross section - true CCQE or MEC;P_{#mu-L} (GeV);P_{#mu-T} (GeV)");
+    TH2D* ptpl_true_nocut = new TH2D("ptpl_true_nocut",
+            axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
+
+    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);P_{#mu-L} (GeV);P_{#mu-T} (GeV)");
+    TH2D* ptpl_true_cut = new TH2D("ptpl_true_cut",
+            axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
+
+    sprintf(axes1, "Differential cross section - QE-like;P_{#mu-L} (GeV);P_{#mu-T} (GeV)");
+    TH2D* ptpl_like_nocut = new TH2D("ptpl_like_nocut",
+            axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
+
+    sprintf(axes1, "Differential cross section - QE-like (angle cut);P_{#mu-L} (GeV);P_{#mu-T} (GeV)");
+    TH2D* ptpl_like_cut = new TH2D("ptpl_like_cut",
+            axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
 
     Hlist->Add(q2_true_nocut);
     Hlist->Add(q2_true_cut);
     Hlist->Add(q2_like_nocut);
     Hlist->Add(q2_like_cut);
+
+    Hlist->Add(enuq2_true_nocut);
+    Hlist->Add(enuq2_true_cut);
+    Hlist->Add(enuq2_like_nocut);
+    Hlist->Add(enuq2_like_cut);
+
+    Hlist->Add(ptpl_true_nocut);
+    Hlist->Add(ptpl_true_cut);
+    Hlist->Add(ptpl_like_nocut);
+    Hlist->Add(ptpl_like_cut);
 
     //
     // Loop over events
@@ -269,25 +322,68 @@ int main(int argc, char ** argv)
 
         // get xsec in 1e-39 cm^2 
         if (is_ccqe_true_event || is_ccqe_like_event) {
-            // TODO: get Q2 from lepton vars
-            double Q2 = kine.Q2(true);   // think we want selected == true
-            double q2_bin_wid = get_bin_width(Q2, q2_bins, q2_nbins);
+            // double Q2 = kine.Q2(true);   // think we want selected == true
+
+            const TLorentzVector &p4fsl = *(event.FinalStatePrimaryLepton()->P4());
+            TVector3 p3fsl = p4fsl.Vect();
+
+            // for pure GENIE, the beam axis is the z-axis; no need to rotate
+            double pl = p4fsl.Pz();
+            double pt = sqrt(p4fsl.Px() * p4fsl.Px() + p4fsl.Py() * p4fsl.Py());
+            double p = p3fsl.Mag();
+            double E = p4fsl.E();
+            double theta = get_angle(event);
+
+            GHepParticle *nu = event.Probe();
+            double enu = nu->Energy();
+
+            const double enuQE = (
+                    pow(constants::kProtonMass, 2) -
+                    pow((constants::kNeutronMass - Ebinding), 2) - 
+                    pow(constants::kMuonMass, 2) + 
+                    2 * (constants::kNeutronMass - Ebinding) * E
+                    ) / 
+                (2 * (constants::kNeutronMass - Ebinding - E + p * cos(theta)));
+            const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
+                pow(constants::kMuonMass, 2);
+
+
+            double q2_bin_wid = get_bin_width(Q2QE, q2_bins, q2_nbins);
+            double enu_bin_wid = get_bin_width(enuQE, enu_bins, enu_nbins);
+            double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);
+            double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);
+
+            // was (1E-39 * units::cm2)
             double q2_weight = 
-                event.XSec() / (1E-39 * units::cm2) / q2_bin_wid / double(nev);
+                event.XSec() / (units::cm2) / q2_bin_wid / double(nev);
+            double enuq2_weight = 
+                event.XSec() / (units::cm2) / 
+                q2_bin_wid / enu_bin_wid / double(nev);
+            double ptpl_weight = 
+                event.XSec() / (units::cm2) / 
+                pt_bin_wid / pl_bin_wid / double(nev);
 
             if (is_ccqe_true_event) {
                 ccqe_true_total_xsec += q2_weight;
-                q2_true_nocut->Fill(Q2, q2_weight);
+                q2_true_nocut->Fill(Q2QE, q2_weight);
+                enuq2_true_nocut->Fill(Q2QE, enuQE, enuq2_weight);
+                ptpl_true_nocut->Fill(pl, pt, ptpl_weight);
                 if (angle_cut(event)) {
-                    q2_true_cut->Fill(Q2, q2_weight);
+                    q2_true_cut->Fill(Q2QE, q2_weight);
+                    enuq2_true_cut->Fill(Q2QE, enuQE, enuq2_weight);
+                    ptpl_true_cut->Fill(pl, pt, ptpl_weight);
                 }
             }
 
             if (is_ccqe_like_event) {
                 ccqe_like_total_xsec += q2_weight;
-                q2_like_nocut->Fill(Q2, q2_weight);
+                q2_like_nocut->Fill(Q2QE, q2_weight);
+                enuq2_like_nocut->Fill(Q2QE, enuQE, enuq2_weight);
+                ptpl_like_nocut->Fill(pl, pt, ptpl_weight);
                 if (angle_cut(event)) {
-                    q2_like_cut->Fill(Q2, q2_weight);
+                    q2_like_cut->Fill(Q2QE, q2_weight);
+                    enuq2_like_cut->Fill(Q2QE, enuQE, enuq2_weight);
+                    ptpl_like_cut->Fill(pl, pt, ptpl_weight);
                 }
             }
         }
@@ -314,6 +410,16 @@ int main(int argc, char ** argv)
     delete q2_like_nocut;
     delete q2_like_cut;
 
+    delete enuq2_true_nocut;
+    delete enuq2_true_cut;
+    delete enuq2_like_nocut;
+    delete enuq2_like_cut;
+
+    delete ptpl_true_nocut;
+    delete ptpl_true_cut;
+    delete ptpl_like_nocut;
+    delete ptpl_like_cut;
+
     delete[] pt_bins;
     delete[] pl_bins;
 
@@ -323,108 +429,4 @@ int main(int argc, char ** argv)
 }
 
 /*
-// filename - input file w/o .root; assuming in root/
-void nuwro_ccqe_extractor(string filename)
-{
-
-    TH2D* enuq2_true_nocut = new TH2D("enuq2_true_nocut",
-            "d^2#sigma/denudq2 (true)",
-            q2_nbins, q2_bins, enu_nbins, enu_bins);
-
-    TH2D* enuq2_true_cut = new TH2D("enuq2_true_cut",
-            "d^2#sigma/denudq2 (true+cut)",
-            q2_nbins, q2_bins, enu_nbins, enu_bins);
-
-    TH2D* enuq2_like_nocut = new TH2D("enuq2_like_nocut",
-            "d^2#sigma/denudq2 (like)",
-            q2_nbins, q2_bins, enu_nbins, enu_bins);
-
-    TH2D* enuq2_like_cut = new TH2D("enuq2_like_cut",
-            "d^2#sigma/denudq2 (like+cut)",
-            q2_nbins, q2_bins, enu_nbins, enu_bins);
-
-    TH2D* ptpl_true_nocut = new TH2D("ptpl_true_nocut",
-            "d^2#sigma/dpTdpL (true)",
-            pl_nbins, pl_bins, pt_nbins, pt_bins);
-
-    TH2D* ptpl_true_cut = new TH2D("ptpl_true_cut",
-            "d^2#sigma/dpTdpL (true+cut)",
-            pl_nbins, pl_bins, pt_nbins, pt_bins);
-
-    TH2D* ptpl_like_nocut = new TH2D("ptpl_like_nocut",
-            "d^2#sigma/dpTdpL (like)",
-            pl_nbins, pl_bins, pt_nbins, pt_bins);
-
-    TH2D* ptpl_like_cut = new TH2D("ptpl_like_cut",
-            "d^2#sigma/dpTdpL (like+cut)",
-            pl_nbins, pl_bins, pt_nbins, pt_bins);
-
-    for (unsigned int i = 0; i < nof_events; i++)
-    {
-        tree->GetEntry(i);
-
-        const double Q2 = -e->q2() / 1000000.0; // in GeV^2
-        const double pl = e->out[0].p().z / 1000.0; // in GeV
-        const double pt = sqrt(e->out[0].p().x * e->out[0].p().x
-                + e->out[0].p().y * e->out[0].p().y) / 1000.0;
-        const double p =  sqrt(e->out[0].p().x * e->out[0].p().x
-                + e->out[0].p().y * e->out[0].p().y
-                + e->out[0].p().z * e->out[0].p().z) ;
-        const double E =  e->out[0].E();
-        const double theta = acos(pl*1000.0/p);//pl was in GeV
-        const double enu = e->in[0].E()/1000.0; //in GeV
-
-        const double enuQE = (pow(constants::kProtonMass,2)-pow((constants::kNeutronMass-Ebinding),2)-pow(constants::kMuonMass,2)+2*(constants::kNeutronMass-Ebinding)*E)/(2*(constants::kNeutronMass-Ebinding-E+p*cos(theta)));
-        const double Q2QE = 2*enuQE*(E-p*cos(theta))-pow(constants::kMuonMass,2);
-        //	cout << enuQE << "\t" << Q2QE <<"\t" << p << "\t" << E << "\t" << theta << endl;	
-
-        if (is_ccqe_true(e))
-        {
-            q2_true_nocut->Fill(Q2);
-            ptpl_true_nocut->Fill(pl, pt);
-            enuq2_true_nocut->Fill(enuQE, Q2QE);
-
-            if (angle_cut(e))
-            {
-                q2_true_cut->Fill(Q2);
-                ptpl_true_cut->Fill(pl, pt);
-                enuq2_true_cut->Fill(enuQE, Q2QE);
-            }
-        }
-
-        if (is_ccqe_like(e))
-        {
-            q2_like_nocut->Fill(Q2);
-            ptpl_like_nocut->Fill(pl, pt);
-            enuq2_like_nocut->Fill(enuQE, Q2QE);
-
-            if (angle_cut(e))
-            {
-                q2_like_cut->Fill(Q2);
-                ptpl_like_cut->Fill(pl, pt); 
-                enuq2_like_cut->Fill(enuQE, Q2QE);
-            }
-        }
-
-        if (100 * i % nof_events == 0)
-            cout << 100 * i / nof_events << "%     \r" << flush;
-    }
-
-    normalize (q2_true_nocut, xsec / nof_events);
-    normalize (q2_true_cut, xsec / nof_events);
-    normalize (q2_like_nocut, xsec / nof_events);
-    normalize (q2_like_cut, xsec / nof_events);
-
-    normalize2D (ptpl_true_nocut, xsec / nof_events);
-    normalize2D (ptpl_true_cut, xsec / nof_events);
-    normalize2D (ptpl_like_nocut, xsec / nof_events);
-    normalize2D (ptpl_like_cut, xsec / nof_events);
-
-    normalize2D (enuq2_true_nocut, xsec / nof_events);
-    normalize2D (enuq2_true_cut, xsec / nof_events);
-    normalize2D (enuq2_like_nocut, xsec / nof_events);
-    normalize2D (enuq2_like_cut, xsec / nof_events);
-
-    output->Write();
-}
 */
