@@ -25,8 +25,6 @@ using std::string;
 using namespace genie;
 
 
-
-
 //____________________________________________________________________________
 double get_bin_width(
         double value, const double bins[], const unsigned int nbins
@@ -120,13 +118,50 @@ bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
     return angle < angle_cut;
 }
 
-//___________________________________________________________________
+//____________________________________________________________________________
+// normalize to cross section per nucleon
+void normalize(TH1* h, const TH1* flux, const double factor) {
+    h->Sumw2();
+    h->Divide(flux);
+    for (int i = 1; i <= h->GetNbinsX(); ++i) {
+        h->SetBinContent(i, h->GetBinContent(i) * factor);
+        h->SetBinError(i, h->GetBinError(i) * factor);
+    }
+}
+
+//____________________________________________________________________________
+// normalize to cross section per nucleon
+void normalize(TH1* h, const double factor) {
+    h->Sumw2();
+    for (int i = 1; i <= h->GetNbinsX(); ++i) {
+        h->SetBinContent(i, h->GetBinContent(i) * factor);
+        h->SetBinError(i, h->GetBinError(i) * factor);
+    }
+}
+
+
+//____________________________________________________________________________
+// normalize to cross section per nucleon
+void normalize2D(TH2* h, const double factor) {
+    h->Sumw2();
+    for (int i = 1; i <= h->GetNbinsX(); ++i) {
+        for (int j = 1; j <= h->GetNbinsY(); ++j) {
+            h->SetBinContent(i, j, h->GetBinContent(i, j) * factor);
+            h->SetBinError(i, j, h->GetBinError(i, j) * factor);
+        }
+    }
+}
+
+//____________________________________________________________________________
 int main(int argc, char ** argv)
 {
     Long64_t max_events = 100000;
     std::string list_file_name = "default_nubar_qe_like_scint.txt";
     std::string out_file_name = "default_nubar_qe_like_scint.root";
     int signal_pdg = -14;
+    int per_nucleon_correction_factor = 7;   // 7 protons in CH
+    double flux_e_min = 1.5;
+    double flux_e_max = 10.0;
 
     //
     // process command line options
@@ -150,11 +185,23 @@ int main(int argc, char ** argv)
             optind++;
             out_file_name = argv[optind];
         }
+        if (sw == "-c" || sw == "--nucleon_correction") {
+            optind++;
+            per_nucleon_correction_factor = atoi(argv[optind]);
+        }
+        if (sw == "-n" || sw == "--flux_e_min") {
+            optind++;
+            flux_e_min = atof(argv[optind]);
+        }
+        if (sw == "-x" || sw == "--flux_e_max") {
+            optind++;
+            flux_e_max = atof(argv[optind]);
+        }
         optind++;
     }
 
     if (signal_pdg != -14 && signal_pdg != 14) {
-        std::cout << "This code is designed for muon neutrinos and muon";
+        std::cout << "This code is designed for muon neutrinos and muon ";
         std::cout << "antineutrinos only. Please check your signal argument."
             << std::endl;
         return 0;
@@ -239,6 +286,23 @@ int main(int argc, char ** argv)
 
     char axes1[200];
 
+    int nbins = 100;
+    double e_low = 0.0;
+    double e_high = 50.0;
+    double ebinwid = (e_high - e_low) / double(nbins);
+    sprintf(axes1, "Cross Section;E_{#nu} (GeV);#frac{d#sigma}{dE} #times 10^{39} cm^{2} / GeV^{2}");
+    TH1D *h_dsigmadE = new TH1D("h_dsigmadE", axes1, nbins, e_low, e_high); 
+    TH1D *h_flux = new TH1D("h_flux", "E;n", nbins, e_low, e_high);
+
+    Hlist->Add(h_dsigmadE);
+    Hlist->Add(h_flux);
+
+    sprintf(axes1, "Number of CC Events;Q^{2}_{QE} (GeV^{2});N-Events");
+    TH1D* q2_n_cc_events = new TH1D("q2_n_cc_events", axes1, q2_nbins, q2_bins);
+
+    sprintf(axes1, "Differential cross section - CC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    TH1D* q2_cc = new TH1D("q2_cc", axes1, q2_nbins, q2_bins);
+
     sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_true_nocut = new TH1D("q2_true_nocut", axes1, q2_nbins, q2_bins);
 
@@ -283,6 +347,8 @@ int main(int argc, char ** argv)
     TH2D* ptpl_like_cut = new TH2D("ptpl_like_cut",
             axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
 
+    Hlist->Add(q2_n_cc_events);
+    Hlist->Add(q2_cc);
     Hlist->Add(q2_true_nocut);
     Hlist->Add(q2_true_cut);
     Hlist->Add(q2_like_nocut);
@@ -301,6 +367,8 @@ int main(int argc, char ** argv)
     //
     // Loop over events
     //
+    int n_cc_events = 0;
+    double cc_total_cross_section = 0.0;
     for(Long64_t i = 0; i < nev; i++) {
 
         // get next tree entry
@@ -311,80 +379,89 @@ int main(int argc, char ** argv)
 
         // get the GENIE event
         EventRecord &event = *(mcrec->event);
-        const Kinematics &kine = event.Summary()->Kine();
-
-        double ccqe_true_total_xsec = 0.0;
-        double ccqe_like_total_xsec = 0.0;
-
         // is this a signal event?
+        bool is_cc_event = is_cc_numu_numubar(event, signal_pdg);
         bool is_ccqe_true_event = is_ccqe_true(event, signal_pdg);
         bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg);
 
-        // get xsec in 1e-39 cm^2 
-        if (is_ccqe_true_event || is_ccqe_like_event) {
-            // double Q2 = kine.Q2(true);   // think we want selected == true
+        if (!is_cc_event) {
+            mcrec->Clear();
+            continue;
+        }
 
-            const TLorentzVector &p4fsl = *(event.FinalStatePrimaryLepton()->P4());
-            TVector3 p3fsl = p4fsl.Vect();
+        GHepParticle *nu = event.Probe();
+        double enu = nu->Energy();
+        if ((enu < flux_e_min) || (enu > flux_e_max)) {
+            mcrec->Clear();
+            continue;
+        } 
 
-            // for pure GENIE, the beam axis is the z-axis; no need to rotate
-            double pl = p4fsl.Pz();
-            double pt = sqrt(p4fsl.Px() * p4fsl.Px() + p4fsl.Py() * p4fsl.Py());
-            double p = p3fsl.Mag();
-            double E = p4fsl.E();
-            double theta = get_angle(event);
-
-            GHepParticle *nu = event.Probe();
-            double enu = nu->Energy();
-
-            const double enuQE = (
-                    pow(constants::kProtonMass, 2) -
-                    pow((constants::kNeutronMass - Ebinding), 2) - 
-                    pow(constants::kMuonMass, 2) + 
-                    2 * (constants::kNeutronMass - Ebinding) * E
-                    ) / 
-                (2 * (constants::kNeutronMass - Ebinding - E + p * cos(theta)));
-            const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
-                pow(constants::kMuonMass, 2);
+        // for pure GENIE, the beam axis is the z-axis; no need to rotate
+        const TLorentzVector &p4fsl = *(event.FinalStatePrimaryLepton()->P4());
+        TVector3 p3fsl = p4fsl.Vect();
+        double pl = p4fsl.Pz();
+        double pt = sqrt(p4fsl.Px() * p4fsl.Px() + p4fsl.Py() * p4fsl.Py());
+        double p = p3fsl.Mag();
+        double E = p4fsl.E();
+        double theta = get_angle(event);
 
 
-            double q2_bin_wid = get_bin_width(Q2QE, q2_bins, q2_nbins);
-            double enu_bin_wid = get_bin_width(enuQE, enu_bins, enu_nbins);
-            double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);
-            double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);
+        const double enuQE = (
+                pow(constants::kProtonMass, 2) -
+                pow((constants::kNeutronMass - Ebinding), 2) - 
+                pow(constants::kMuonMass, 2) + 
+                2 * (constants::kNeutronMass - Ebinding) * E
+                ) / 
+            (2 * (constants::kNeutronMass - Ebinding - E + p * cos(theta)));
+        const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
+            pow(constants::kMuonMass, 2);
 
+        // double q2_weight = event.XSec() / (units::cm2);
+        double q2_bin_wid = get_bin_width(Q2QE, q2_bins, q2_nbins);
+        double enu_bin_wid = get_bin_width(enuQE, enu_bins, enu_nbins);
+        double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);
+        double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);
+
+        // double q2_wt = 1.0 / q2_bin_wid;
+        // double enuq2_wt = 1.0 / q2_bin_wid / enu_bin_wid;
+        // double ptpl_wt = 1.0 / pl_bin_wid / pt_bin_wid;
+
+        double q2_wt = 1.0;
+        double enuq2_wt = 1.0;
+        double ptpl_wt = 1.0;
+
+        if (is_cc_event) {
+            n_cc_events += 1;
             // was (1E-39 * units::cm2)
-            double q2_weight = 
-                event.XSec() / (units::cm2) / q2_bin_wid / double(nev);
-            double enuq2_weight = 
-                event.XSec() / (units::cm2) / 
-                q2_bin_wid / enu_bin_wid / double(nev);
-            double ptpl_weight = 
-                event.XSec() / (units::cm2) / 
-                pt_bin_wid / pl_bin_wid / double(nev);
+            double eweight = event.XSec() / (units::cm2);
+            // double eweight = event.XSec() / (units::cm2) / ebinwid;
+            cc_total_cross_section += event.XSec() / (units::cm2);
+            q2_cc->Fill(Q2QE, eweight * q2_wt);
+            q2_n_cc_events->Fill(Q2QE);
+            h_dsigmadE->Fill(enu, eweight);
+            // h_flux->Fill(enu, 1.0 / ebinwid);
+            h_flux->Fill(enu);
+        }
 
-            if (is_ccqe_true_event) {
-                ccqe_true_total_xsec += q2_weight;
-                q2_true_nocut->Fill(Q2QE, q2_weight);
-                enuq2_true_nocut->Fill(Q2QE, enuQE, enuq2_weight);
-                ptpl_true_nocut->Fill(pl, pt, ptpl_weight);
-                if (angle_cut(event)) {
-                    q2_true_cut->Fill(Q2QE, q2_weight);
-                    enuq2_true_cut->Fill(Q2QE, enuQE, enuq2_weight);
-                    ptpl_true_cut->Fill(pl, pt, ptpl_weight);
-                }
+        if (is_ccqe_true_event) {
+            q2_true_nocut->Fill(Q2QE, q2_wt);
+            enuq2_true_nocut->Fill(Q2QE, enuQE, enuq2_wt);
+            ptpl_true_nocut->Fill(pl, pt, ptpl_wt);
+            if (angle_cut(event)) {
+                q2_true_cut->Fill(Q2QE, q2_wt);
+                enuq2_true_cut->Fill(Q2QE, enuQE, enuq2_wt);
+                ptpl_true_cut->Fill(pl, pt, ptpl_wt);
             }
+        }
 
-            if (is_ccqe_like_event) {
-                ccqe_like_total_xsec += q2_weight;
-                q2_like_nocut->Fill(Q2QE, q2_weight);
-                enuq2_like_nocut->Fill(Q2QE, enuQE, enuq2_weight);
-                ptpl_like_nocut->Fill(pl, pt, ptpl_weight);
-                if (angle_cut(event)) {
-                    q2_like_cut->Fill(Q2QE, q2_weight);
-                    enuq2_like_cut->Fill(Q2QE, enuQE, enuq2_weight);
-                    ptpl_like_cut->Fill(pl, pt, ptpl_weight);
-                }
+        if (is_ccqe_like_event) {
+            q2_like_nocut->Fill(Q2QE, q2_wt);
+            enuq2_like_nocut->Fill(Q2QE, enuQE, enuq2_wt);
+            ptpl_like_nocut->Fill(pl, pt, ptpl_wt);
+            if (angle_cut(event)) {
+                q2_like_cut->Fill(Q2QE, q2_wt);
+                enuq2_like_cut->Fill(Q2QE, enuQE, enuq2_wt);
+                ptpl_like_cut->Fill(pl, pt, ptpl_wt);
             }
         }
 
@@ -394,8 +471,54 @@ int main(int argc, char ** argv)
     } //end loop over events
 
     //
-    // division by flux handled in event weight (flux integrated)
+    // division by "flux" 
     //
+    std::cout << "per nucleon corr = " << per_nucleon_correction_factor << std::endl;
+    h_dsigmadE->Divide(h_flux);
+    double integ_xsec = h_dsigmadE->Integral("width");
+    std::cout << "integral cross section = " << integ_xsec << std::endl;
+    double avg_xsec = cc_total_cross_section / n_cc_events;
+    std::cout << "average cross section = " << avg_xsec << std::endl;
+    double integ = q2_cc->Integral("width");
+    double nentries = q2_cc->GetEntries();
+    std::cout << "integ = " << integ << "; nentries = " << nentries << std::endl;
+    integ_xsec = q2_cc->Integral("width") / q2_cc->GetEntries();
+    std::cout << "Q2 integral cross seciton = " << integ_xsec << std::endl;
+    std::cout << "Q2 integral xsec / per nucl corr = " <<
+        integ_xsec / per_nucleon_correction_factor << std::endl;
+    double scale_factor = integ_xsec / per_nucleon_correction_factor;
+
+    q2_n_cc_events->Sumw2();
+    // double scale_factor = cc_total_cross_section / 
+    //     (n_cc_events * per_nucleon_correction_factor);
+    // std::cout << "n_cc_events = " << n_cc_events << std::endl;
+    // double scale_factor = (integ_xsec) /
+    //     (n_cc_events * per_nucleon_correction_factor);
+
+    // normalize(q2_true_nocut, scale_factor);
+    // normalize(q2_true_cut, scale_factor);
+    // normalize(q2_like_nocut, scale_factor);
+    // normalize(q2_like_cut, scale_factor);
+
+    // scale_factor = avg_xsec / per_nucleon_correction_factor;
+    // std::cout << "new scale factor = " << scale_factor << std::endl;
+
+    // scale_factor = 1.0;
+
+    normalize(q2_true_nocut, q2_n_cc_events, scale_factor);
+    normalize(q2_true_cut, q2_n_cc_events, scale_factor);
+    normalize(q2_like_nocut, q2_n_cc_events, scale_factor);
+    normalize(q2_like_cut, q2_n_cc_events, scale_factor);
+
+    normalize2D(enuq2_true_nocut, scale_factor);
+    normalize2D(enuq2_true_cut, scale_factor);
+    normalize2D(enuq2_like_nocut, scale_factor);
+    normalize2D(enuq2_like_cut, scale_factor);
+
+    normalize2D(ptpl_true_nocut, scale_factor);
+    normalize2D(ptpl_true_cut, scale_factor);
+    normalize2D(ptpl_like_nocut, scale_factor);
+    normalize2D(ptpl_like_cut, scale_factor);
 
     //
     // Close histogram file and clean up
@@ -405,6 +528,11 @@ int main(int argc, char ** argv)
     Hlist->Write();
     outputfile->Close();
 
+    delete h_dsigmadE;
+    delete h_flux;
+
+    delete q2_n_cc_events;
+    delete q2_cc;
     delete q2_true_nocut;
     delete q2_true_cut;
     delete q2_like_nocut;
@@ -427,6 +555,3 @@ int main(int argc, char ** argv)
 
     return 0;
 }
-
-/*
-*/

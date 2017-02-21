@@ -19,42 +19,19 @@ default_nu_qe_like_lead.txt
 zexp_nu_qe_like_lead.txt
 "
 
-
-nubarfilelistlist="
-default_nubar_qe_like_scint.txt
-"
-nufilelistlist="
-default_nu_qe_like_scint.txt
-"
-
 NEVT=-1
-NEVT=20000
+NEVT=50000
 
 
-for filelist in $nubarfilelistlist
-do
-    fileroot=$(echo $filelist | cut -d. -f1)
-    listname=${fileroot}.txt
-    rootname=${fileroot}.root
-    echo $listname
-    echo $rootname
-    echo ""
-    $DEBUG ../bin/qelikediff -f $listname \
-        -o $rootname \
-        -m $NEVT \
-        -s -14
-done
+$DEBUG ../bin/qelikediff -f default_nubar_qe_like_scint.txt \
+    -o default_nubar_qe_like_scint.root \
+    -m $NEVT \
+    -s -14 \
+    -n 1.5 -x 10 -c 7 
+    # -n 0 -x 50 -c 13 
 
-for filelist in $nufilelistlist
-do
-    fileroot=$(echo $filelist | cut -d. -f1)
-    listname=${fileroot}.txt
-    rootname=${fileroot}.root
-    echo $listname
-    echo $rootname
-    echo ""
-    $DEBUG ../bin/qelikediff -f $listname \
-        -o $rootname \
-        -m $NEVT \
-        -s 14
-done
+# $DEBUG ../bin/qelikediff -f default_nu_qe_like_scint.txt \
+#     -o default_nu_qe_like_scint.root \
+#     -m $NEVT \
+#     -s 14 \
+#     -c 6
