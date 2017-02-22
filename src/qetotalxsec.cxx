@@ -97,9 +97,6 @@ int main(int argc, char ** argv)
         Interaction *in = event.Summary();
         GHepParticle *nu = event.Probe();
         const ProcessInfo &proc = in->ProcInfo();
-        // const InitialState &init = in->InitState();
-
-        // double nu_e = init.ProbeE();
         double nu_e = nu->Energy();
         int pdg = nu->Pdg();
 
@@ -108,20 +105,6 @@ int main(int argc, char ** argv)
         if (proc.IsWeakCC() && proc.IsQuasiElastic()) {
             is_signal = true;
         }
-        // loop over particles - define signal event, etc.
-        /*
-        GHepParticle * p = 0;
-        TIter event_iter(&event);
-        while ((p=dynamic_cast<GHepParticle *>(event_iter.Next()))) {
-            if (p->Status() == kIStStableFinalState ) {
-                int ppdg = p->Pdg();
-                double pe = p->E();
-                if (ppdg == kPdgProton) {
-                    // blah, blah
-                }
-            }
-        }
-        */
 
         // get xsec in 1e-39 cm^2 and prep flux
         // (not a scalar n-entries normalization here) 

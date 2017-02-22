@@ -297,23 +297,38 @@ int main(int argc, char ** argv)
     Hlist->Add(h_dsigmadE);
     Hlist->Add(h_flux);
 
-    sprintf(axes1, "Number of CC Events;Q^{2}_{QE} (GeV^{2});N-Events");
-    TH1D* q2_n_cc_events = new TH1D("q2_n_cc_events", axes1, q2_nbins, q2_bins);
+    // CC Inclusive
 
     sprintf(axes1, "Differential cross section - CC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_cc = new TH1D("q2_cc", axes1, q2_nbins, q2_bins);
 
+    sprintf(axes1, "Number of CC Events;Q^{2}_{QE} (GeV^{2});N-Events");
+    TH1D* q2_n_cc_events = new TH1D("q2_n_cc_events", axes1, q2_nbins, q2_bins);
+
+    // CCQE "True"
+
     sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_true_nocut = new TH1D("q2_true_nocut", axes1, q2_nbins, q2_bins);
+
+    sprintf(axes1, "Number of events - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    TH1D* q2_n_true_nocut_events = new TH1D("q2_n_true_nocut_events", axes1, q2_nbins, q2_bins);
+
+    // CCQE "True" - angle cut
 
     sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_true_cut = new TH1D("q2_true_cut", axes1, q2_nbins, q2_bins);
 
+    // CCQE-like
+
     sprintf(axes1, "Differential cross section - QE-like;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_like_nocut = new TH1D("q2_like_nocut", axes1, q2_nbins, q2_bins);
 
+    // CCQE-like - angle cut
+
     sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
     TH1D* q2_like_cut = new TH1D("q2_like_cut", axes1, q2_nbins, q2_bins);
+
+    // 2D
 
     sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});E_{#nu-QE} (GeV)");
     TH2D* enuq2_true_nocut = new TH2D("enuq2_true_nocut",
@@ -347,9 +362,12 @@ int main(int argc, char ** argv)
     TH2D* ptpl_like_cut = new TH2D("ptpl_like_cut",
             axes1, pl_nbins, pl_bins, pt_nbins, pt_bins);
 
-    Hlist->Add(q2_n_cc_events);
     Hlist->Add(q2_cc);
+    Hlist->Add(q2_n_cc_events);
+
     Hlist->Add(q2_true_nocut);
+    Hlist->Add(q2_n_true_nocut_events);
+
     Hlist->Add(q2_true_cut);
     Hlist->Add(q2_like_nocut);
     Hlist->Add(q2_like_cut);
@@ -426,9 +444,13 @@ int main(int argc, char ** argv)
         // double enuq2_wt = 1.0 / q2_bin_wid / enu_bin_wid;
         // double ptpl_wt = 1.0 / pl_bin_wid / pt_bin_wid;
 
-        double q2_wt = 1.0;
-        double enuq2_wt = 1.0;
-        double ptpl_wt = 1.0;
+        // double q2_wt = 1.0;
+        // double enuq2_wt = 1.0;
+        // double ptpl_wt = 1.0;
+
+        double q2_wt = event.XSec() / (units::cm2);
+        double enuq2_wt = event.XSec() / (units::cm2);
+        double ptpl_wt = event.XSec() / (units::cm2);
 
         if (is_cc_event) {
             n_cc_events += 1;
@@ -445,6 +467,7 @@ int main(int argc, char ** argv)
 
         if (is_ccqe_true_event) {
             q2_true_nocut->Fill(Q2QE, q2_wt);
+            q2_n_true_nocut_events->Fill(Q2QE, 1.0);
             enuq2_true_nocut->Fill(Q2QE, enuQE, enuq2_wt);
             ptpl_true_nocut->Fill(pl, pt, ptpl_wt);
             if (angle_cut(event)) {
@@ -505,20 +528,21 @@ int main(int argc, char ** argv)
 
     // scale_factor = 1.0;
 
-    normalize(q2_true_nocut, q2_n_cc_events, scale_factor);
-    normalize(q2_true_cut, q2_n_cc_events, scale_factor);
-    normalize(q2_like_nocut, q2_n_cc_events, scale_factor);
-    normalize(q2_like_cut, q2_n_cc_events, scale_factor);
+    q2_true_nocut->Divide(q2_n_true_nocut_events);
+    // normalize(q2_true_nocut, q2_n_cc_events, scale_factor);
+    // normalize(q2_true_cut, q2_n_cc_events, scale_factor);
+    // normalize(q2_like_nocut, q2_n_cc_events, scale_factor);
+    // normalize(q2_like_cut, q2_n_cc_events, scale_factor);
 
-    normalize2D(enuq2_true_nocut, scale_factor);
-    normalize2D(enuq2_true_cut, scale_factor);
-    normalize2D(enuq2_like_nocut, scale_factor);
-    normalize2D(enuq2_like_cut, scale_factor);
+    // normalize2D(enuq2_true_nocut, scale_factor);
+    // normalize2D(enuq2_true_cut, scale_factor);
+    // normalize2D(enuq2_like_nocut, scale_factor);
+    // normalize2D(enuq2_like_cut, scale_factor);
 
-    normalize2D(ptpl_true_nocut, scale_factor);
-    normalize2D(ptpl_true_cut, scale_factor);
-    normalize2D(ptpl_like_nocut, scale_factor);
-    normalize2D(ptpl_like_cut, scale_factor);
+    // normalize2D(ptpl_true_nocut, scale_factor);
+    // normalize2D(ptpl_true_cut, scale_factor);
+    // normalize2D(ptpl_like_nocut, scale_factor);
+    // normalize2D(ptpl_like_cut, scale_factor);
 
     //
     // Close histogram file and clean up
@@ -531,9 +555,12 @@ int main(int argc, char ** argv)
     delete h_dsigmadE;
     delete h_flux;
 
-    delete q2_n_cc_events;
     delete q2_cc;
+    delete q2_n_cc_events;
+
     delete q2_true_nocut;
+    delete q2_n_true_nocut_events;
+
     delete q2_true_cut;
     delete q2_like_nocut;
     delete q2_like_cut;
