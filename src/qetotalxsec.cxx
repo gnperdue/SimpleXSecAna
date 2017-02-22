@@ -26,6 +26,7 @@ int main(int argc, char ** argv)
 {
     Long64_t max_events = 100000;
     std::string list_file_name = "default_nu_qe_like_carbon.txt";
+    std::string out_file_name = "totalxsec_default_nu_qe_like_carbon.root";
 
     //
     // process command line options
@@ -40,6 +41,10 @@ int main(int argc, char ** argv)
         if (sw == "-m" || sw == "--max_events") {
             optind++;
             max_events = Long64_t(atoi(argv[optind]));
+        }
+        if (sw == "-o" || sw == "--out_file") {
+            optind++;
+            out_file_name = argv[optind];
         }
         optind++;
     }
@@ -59,7 +64,10 @@ int main(int argc, char ** argv)
     }
 
     Long64_t nEntries = chain->GetEntries(); 
+    Long64_t nev = (max_events > 0) ?
+        TMath::Min(max_events, nEntries) : nEntries;
     std::cout << "There are " << nEntries << " in the chain." << std::endl;
+    std::cout << "We will process " << nev << " events." << std::endl;
 
     NtpMCEventRecord * mcrec = 0;
     chain->SetBranchAddress("gmcrec", &mcrec);
@@ -84,7 +92,7 @@ int main(int argc, char ** argv)
     //
     // Loop over events
     //
-    for(Long64_t i = 0; i < nEntries; i++) {
+    for(Long64_t i = 0; i < nev; i++) {
 
         // get next tree entry
         chain->GetEntry(i);
@@ -118,8 +126,6 @@ int main(int argc, char ** argv)
         // clear current mc event record
         mcrec->Clear();
 
-        if (i > max_events) break;
-
     } //end loop over events
 
     //
@@ -130,7 +136,7 @@ int main(int argc, char ** argv)
     //
     // Close histogram file and clean up
     //
-    std::string histname = "$ANA_HIST_DIR/qetotalxsec_ghepana.root";
+    std::string histname = "$ANA_HIST_DIR/" + out_file_name;
     TFile * outputfile = new TFile(histname.c_str(), "RECREATE");
     Hlist->Write();
     outputfile->Close();
