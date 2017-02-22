@@ -81,7 +81,6 @@ int main(int argc, char ** argv)
     int nbins = 80;
     double e_low = 0.0;
     double e_high = 20.0;
-    double ebinwid = (e_high - e_low) / double(nbins);
     sprintf(axes1, "Cross Section;E_{#nu} (GeV);#frac{d#sigma}{dE} #times 10^{39} cm^{2} / GeV^{2}");
     TH1D *h_dsigmadE = new TH1D("h_dsigmadE", axes1, nbins, e_low, e_high); 
     TH1D *h_flux = new TH1D("h_flux", "E;n", nbins, e_low, e_high);
@@ -117,10 +116,9 @@ int main(int argc, char ** argv)
         // get xsec in 1e-39 cm^2 and prep flux
         // (not a scalar n-entries normalization here) 
         if (is_signal) {
-            double weight = 
-                event.XSec() / (1E-39 * units::cm2) / ebinwid;
+            double weight = event.XSec() / (1E-39 * units::cm2);
             h_dsigmadE->Fill(nu_e, weight);
-            h_flux->Fill(nu_e, 1.0 / ebinwid);
+            h_flux->Fill(nu_e, 1.0);
         }
 
         // clear current mc event record
@@ -129,7 +127,7 @@ int main(int argc, char ** argv)
     } //end loop over events
 
     //
-    // divide by flux
+    // divide by flux (selected events, must do bin-by-bin for E)
     //
     h_dsigmadE->Divide(h_flux);
 
