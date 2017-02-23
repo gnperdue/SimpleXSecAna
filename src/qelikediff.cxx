@@ -260,6 +260,16 @@ int main(int argc, char ** argv)
         chain->Add(filename);
     }
 
+    //
+    // Get the input flux
+    //
+    std::string numubar_fluxfile = s + std::string("/numubarRHC.root");
+    std::string numu_fluxfile = s + std::string("/numuFHC.root");
+    TFile numubar_f(numubar_fluxfile.c_str());
+    TH1D *numubar_flux = (TH1D*)numubar_f.Get("newnumubarRHC_CV_WithStatErr");
+    TFile numu_f(numu_fluxfile.c_str());
+    TH1D *numu_flux = (TH1D*)numu_f.Get("newnumuFHC_CV_WithStatErr");
+
     Long64_t nEntries = chain->GetEntries(); 
     Long64_t nev = (max_events > 0) ?
         TMath::Min(max_events, nEntries) : nEntries;
@@ -274,17 +284,26 @@ int main(int argc, char ** argv)
     //
     TObjArray * Hlist = new TObjArray(0);
 
-    char axes1[200];
+    // keep a copy of the flux used to produce the samples
+    Hlist->Add(numubar_flux);
+    Hlist->Add(numu_flux);
 
-    int nbins = 100;
-    double e_low = 0.0;
-    double e_high = 50.0;
-    sprintf(axes1, "Cross Section;E_{#nu} (GeV);#frac{d#sigma}{dE} #times 10^{39} cm^{2} / GeV^{2}");
-    TH1D *h_dsigmadE = new TH1D("h_dsigmadE", axes1, nbins, e_low, e_high); 
-    TH1D *h_flux = new TH1D("h_flux", "E;n", nbins, e_low, e_high);
+    // copy the flux files to get the binning we want - we can be lazy since
+    // both nu and nu-bar flux histograms have the same binning, so just use
+    // whichever one
+    TH1D *h_dsigmadE = (TH1D*)numubar_flux->Clone("h_dsigmadE");
+    h_dsigmadE->Reset();
+    h_dsigmadE->SetName("h_dsigmadE");
+    h_dsigmadE->SetTitle("Total Cross Section;E_{#nu} (GeV);#frac{d#sigma}{dE} #times 10^{39} cm^{2} / GeV");
+    TH1D *h_selectedsamp_flux = (TH1D*)numubar_flux->Clone("h_selectedsamp_flux");
+    h_selectedsamp_flux->Reset();
+    h_selectedsamp_flux->SetName("h_selectedsamp_flux");
+    h_selectedsamp_flux->SetTitle("Selected events;E;n");
 
     Hlist->Add(h_dsigmadE);
-    Hlist->Add(h_flux);
+    Hlist->Add(h_selectedsamp_flux);
+
+    char axes1[200];
 
     // CC Inclusive
 
@@ -386,17 +405,28 @@ int main(int argc, char ** argv)
         bool is_ccqe_true_event = is_ccqe_true(event, signal_pdg);
         bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg);
 
-        if (!is_cc_event) {
-            mcrec->Clear();
-            continue;
-        }
-
+        // only accept events inside the specified flux window
         GHepParticle *nu = event.Probe();
         double enu = nu->Energy();
         if ((enu < flux_e_min) || (enu > flux_e_max)) {
             mcrec->Clear();
             continue;
         } 
+
+        double units_scale = 1.0e-39;   // 1.0e-39;
+        double evt_weight = event.XSec() / (units_scale * units::cm2);
+        double q2_wt = evt_weight;
+        double enuq2_wt = evt_weight;
+        double ptpl_wt = evt_weight;
+
+        h_dsigmadE->Fill(enu, evt_weight);
+        h_selectedsamp_flux->Fill(enu);
+
+        // only accept CC events
+        if (!is_cc_event) {
+            mcrec->Clear();
+            continue;
+        }
 
         // for pure GENIE, the beam axis is the z-axis; no need to rotate
         const TLorentzVector &p4fsl = *(event.FinalStatePrimaryLepton()->P4());
@@ -406,7 +436,6 @@ int main(int argc, char ** argv)
         double p = p3fsl.Mag();
         double E = p4fsl.E();
         double theta = get_angle(event);
-
 
         const double enuQE = (
                 pow(constants::kProtonMass, 2) -
@@ -418,21 +447,11 @@ int main(int argc, char ** argv)
         const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
             pow(constants::kMuonMass, 2);
 
-        double units_scale = 1.0e-39;   // 1.0e-39;
-
-        double evt_weight = event.XSec() / (units_scale * units::cm2);
-        double q2_wt = evt_weight;
-        double enuq2_wt = evt_weight;
-        double ptpl_wt = evt_weight;
-        double eweight = evt_weight;
-
         if (is_cc_event) {
             n_cc_events += 1;
             cc_total_cross_section += evt_weight;
             q2_cc->Fill(Q2QE, q2_wt);
             q2_n_cc_events->Fill(Q2QE);
-            h_dsigmadE->Fill(enu, eweight);
-            h_flux->Fill(enu);
         }
 
         if (is_ccqe_true_event) {
@@ -467,7 +486,7 @@ int main(int argc, char ** argv)
     // - selected events, not bin-by-bin if not doing sigma(E)
     //
 
-    h_dsigmadE->Divide(h_flux);
+    h_dsigmadE->Divide(h_selectedsamp_flux);
     normalize(q2_cc,
             1.0 / q2_cc->GetEntries() / per_nucleon_correction_factor);
 
@@ -507,7 +526,7 @@ int main(int argc, char ** argv)
     outputfile->Close();
 
     delete h_dsigmadE;
-    delete h_flux;
+    delete h_selectedsamp_flux;
 
     delete q2_cc;
     delete q2_n_cc_events;
