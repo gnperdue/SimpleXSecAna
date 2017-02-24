@@ -33,7 +33,8 @@ double get_bin_width(
     unsigned int index_check = 1;
     while (index_check <= nbins) {
         if (value < bins[index_check]) {
-            return bins[index_check] - bins[index_check - 1];
+            double width = bins[index_check] - bins[index_check - 1];
+            return width;
         }
         index_check++;
     }
@@ -140,6 +141,40 @@ void normalize2D(TH2* h, const double factor) {
             h->SetBinError(i, j, 0.0);
         }
     }
+}
+
+//____________________________________________________________________________
+double flux_integral(const TH1D* flux, double emin, double emax) {
+    int nbins_flux = flux->GetNbinsX();
+    double flux_int = 0.0;
+    for (int i = 1; i <= nbins_flux; ++i) {
+        double e = flux->GetBinCenter(i);
+        if (e > emin && e < emax) {
+            double f = flux->GetBinContent(i);
+            double w = flux->GetBinWidth(i);
+            flux_int += f * w;
+        }
+    }
+    return flux_int;
+}
+
+//____________________________________________________________________________
+double flux_xsec_integral(const TH1D* xsec, const TH1D* flux) {
+    // assume we have identical binning
+    int nbins_xsec = xsec->GetNbinsX();
+    int nbins_flux = flux->GetNbinsX();
+    if (nbins_xsec != nbins_flux) {
+        return -1.0;
+    }
+
+    double conv_int = 0.0;
+    for (int i = 1; i <= nbins_xsec; ++i) {
+        double x = xsec->GetBinContent(i);
+        double f = flux->GetBinContent(i);
+        double w = xsec->GetBinWidth(i);
+        conv_int += x * f * w;
+    }
+    return conv_int;
 }
 
 //____________________________________________________________________________
@@ -389,7 +424,9 @@ int main(int argc, char ** argv)
     // Loop over events
     //
     int n_cc_events = 0;
-    double cc_total_cross_section = 0.0;
+    int n_ccqe_events = 0;
+    int n_ccqelike_events = 0;
+    double units_scale = 1.0e-39;   // 1.0e-39;
     for(Long64_t i = 0; i < nev; i++) {
 
         // get next tree entry
@@ -400,27 +437,23 @@ int main(int argc, char ** argv)
 
         // get the GENIE event
         EventRecord &event = *(mcrec->event);
+        GHepParticle *nu = event.Probe();
+        double enu = nu->Energy();
         // is this a signal event?
         bool is_cc_event = is_cc_numu_numubar(event, signal_pdg);
         bool is_ccqe_true_event = is_ccqe_true(event, signal_pdg);
         bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg);
 
+        double evt_weight = event.XSec() / (units_scale * units::cm2);
+        // bin width normalization falls out when we divide by h_selectedsamp_flux later
+        h_dsigmadE->Fill(enu, evt_weight);
+        h_selectedsamp_flux->Fill(enu);
+
         // only accept events inside the specified flux window
-        GHepParticle *nu = event.Probe();
-        double enu = nu->Energy();
         if ((enu < flux_e_min) || (enu > flux_e_max)) {
             mcrec->Clear();
             continue;
         } 
-
-        double units_scale = 1.0e-39;   // 1.0e-39;
-        double evt_weight = event.XSec() / (units_scale * units::cm2);
-        double q2_wt = evt_weight;
-        double enuq2_wt = evt_weight;
-        double ptpl_wt = evt_weight;
-
-        h_dsigmadE->Fill(enu, evt_weight);
-        h_selectedsamp_flux->Fill(enu);
 
         // only accept CC events
         if (!is_cc_event) {
@@ -447,14 +480,27 @@ int main(int argc, char ** argv)
         const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
             pow(constants::kMuonMass, 2);
 
+        double q2_bin_wid = get_bin_width(Q2QE, q2_bins, q2_nbins);        
+        double enu_bin_wid = get_bin_width(enuQE, enu_bins, enu_nbins);        
+        double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);        
+        double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);        
+
+        double q2_wt = evt_weight / q2_bin_wid;        
+        double enuq2_wt = evt_weight / q2_bin_wid / enu_bin_wid;        
+        double ptpl_wt = evt_weight / pl_bin_wid / pt_bin_wid;
+
+        // double q2_wt = evt_weight;
+        // double enuq2_wt = evt_weight;
+        // double ptpl_wt = evt_weight;
+
         if (is_cc_event) {
             n_cc_events += 1;
-            cc_total_cross_section += evt_weight;
             q2_cc->Fill(Q2QE, q2_wt);
             q2_n_cc_events->Fill(Q2QE);
         }
 
         if (is_ccqe_true_event) {
+            n_ccqe_events += 1;
             q2_true_nocut->Fill(Q2QE, q2_wt);
             enuq2_true_nocut->Fill(Q2QE, enuQE, enuq2_wt);
             ptpl_true_nocut->Fill(pl, pt, ptpl_wt);
@@ -466,6 +512,7 @@ int main(int argc, char ** argv)
         }
 
         if (is_ccqe_like_event) {
+            n_ccqelike_events += 1;
             q2_like_nocut->Fill(Q2QE, q2_wt);
             enuq2_like_nocut->Fill(Q2QE, enuQE, enuq2_wt);
             ptpl_like_nocut->Fill(pl, pt, ptpl_wt);
@@ -481,23 +528,31 @@ int main(int argc, char ** argv)
 
     } //end loop over events
 
+    std::cout << "n_cc_events       = " << n_cc_events << std::endl;
+    std::cout << "n_ccqe_events     = " << n_ccqe_events << std::endl;
+    std::cout << "n_ccqelike_events = " << n_ccqelike_events << std::endl;
+
     //
     // division by "flux" 
     // - selected events, not bin-by-bin if not doing sigma(E)
     //
 
     h_dsigmadE->Divide(h_selectedsamp_flux);
+    double conv_int = flux_xsec_integral(h_dsigmadE, numubar_flux);
+    double flux_int = flux_integral(numubar_flux, flux_e_min, flux_e_max);
+    double w = conv_int / flux_int / double(nev);
+
     normalize(q2_cc,
             1.0 / q2_cc->GetEntries() / per_nucleon_correction_factor);
 
     normalize(q2_true_nocut,
-            1.0 / q2_true_nocut->GetEntries() / per_nucleon_correction_factor);
+            w / per_nucleon_correction_factor);
     normalize(q2_true_cut,
-            1.0 / q2_true_cut->GetEntries() / per_nucleon_correction_factor);
+            w / per_nucleon_correction_factor);
     normalize(q2_like_nocut,
-            1.0 / q2_like_nocut->GetEntries() / per_nucleon_correction_factor);
+            w / per_nucleon_correction_factor);
     normalize(q2_like_cut,
-            1.0 / q2_like_cut->GetEntries() / per_nucleon_correction_factor);
+            w / per_nucleon_correction_factor);
 
     normalize2D(enuq2_true_nocut,
             1.0 / enuq2_true_nocut->GetEntries() / per_nucleon_correction_factor);
