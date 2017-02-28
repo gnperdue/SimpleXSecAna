@@ -61,20 +61,25 @@ bool is_ccqe_like(
                 double pe = p->E();
                 if (ppdg == kPdgProton) {
                     if (nu_pdg == kPdgAntiNuMu) {
-                        double pe = p->E();
                         if (pe > Tk_cut) return false;
                     }
-                }
-                // absolutely no pions in the final state
-                if (ppdg == kPdgPiP || ppdg == kPdgPiM || ppdg == kPdgPi0) {
+                } else if (ppdg == kPdgPiP || ppdg == kPdgPiM || ppdg == kPdgPi0) {
+                    // absolutely no pions in the final state
                     return false;
-                }
-                // one and only one chaged "muon" in the final state
-                if (ppdg == kPdgMuon || ppdg == kPdgAntiMuon) {
+                } else if (ppdg == kPdgMuon || ppdg == kPdgAntiMuon) {
+                    // one and only one chaged "muon" in the final state
                     charged_muon_count++;
                     if (charged_muon_count > 1) {
                         return false;
                     }
+                } else if (ppdg == kPdgGamma) {
+                    // very soft photons are allowed due to deexcitation "issues"
+                    if (pe > 10.0) return false;
+                } else if (ppdg == kPdgNeutron) {
+                    // ok
+                } else {
+                    // not allowed!
+                    return false;
                 }
             }
         }
