@@ -30,8 +30,8 @@ $DEBUG ../bin/qelikediff -f default_nubar_qe_like_scint.txt \
     -n 0 -x 50 -c 13 -u 13
     # -n 1.5 -x 10 -c 7 -u 13
 
-# $DEBUG ../bin/qelikediff -f default_nu_qe_like_scint.txt \
-#     -o default_nu_qe_like_scint.root \
-#     -m $NEVT \
-#     -s 14 \
-#     -n 1.5 -x 10 -c 6
+$DEBUG ../bin/qelikediff -f default_nu_qe_like_scint.txt \
+    -o default_nu_qe_like_scint.root \
+    -m $NEVT \
+    -s 14 \
+    -n 0 -x 50 -c 13 -u 13

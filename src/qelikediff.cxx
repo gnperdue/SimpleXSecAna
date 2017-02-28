@@ -26,22 +26,6 @@ using namespace genie;
 
 
 //____________________________________________________________________________
-double get_bin_width(
-        double value, const double bins[], const unsigned int nbins
-        ) {
-    if (nbins < 2) return -1.0;
-    unsigned int index_check = 1;
-    while (index_check <= nbins) {
-        if (value < bins[index_check]) {
-            double width = bins[index_check] - bins[index_check - 1];
-            return width;
-        }
-        index_check++;
-    }
-    return -1.0;
-}
-
-//____________________________________________________________________________
 // check signal pdg
 bool is_cc_numu_numubar(const EventRecord &event, int signal_pdg) {
     const ProcessInfo &proc = event.Summary()->ProcInfo();
@@ -461,11 +445,6 @@ int main(int argc, char ** argv)
         const double Q2QE = 2 * enuQE * (E - p * cos(theta)) -
             pow(constants::kMuonMass, 2);
 
-        double q2_bin_wid = get_bin_width(Q2QE, q2_bins, q2_nbins);        
-        double enu_bin_wid = get_bin_width(enuQE, enu_bins, enu_nbins);        
-        double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);        
-        double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);        
-
         double q2_wt = 1.0;
         double enuq2_wt = 1.0;
         double ptpl_wt = 1.0;
@@ -514,8 +493,15 @@ int main(int argc, char ** argv)
     // - selected events, not bin-by-bin if not doing sigma(E)
     //
     h_dsigmadE->Divide(h_selectedsamp_flux);
-    double conv_int = flux_xsec_integral(h_dsigmadE, numubar_flux);
-    double flux_int = flux_integral(numubar_flux, flux_e_min, flux_e_max);
+    double conv_int = 0.0;
+    double flux_int = 0.0;
+    if (signal_pdg == 14) {
+        conv_int = flux_xsec_integral(h_dsigmadE, numu_flux);
+        flux_int = flux_integral(numu_flux, flux_e_min, flux_e_max);
+    } else if (signal_pdg == -14) {
+        conv_int = flux_xsec_integral(h_dsigmadE, numubar_flux);
+        flux_int = flux_integral(numubar_flux, flux_e_min, flux_e_max);
+    }
     double nucleon_scaling_factor = double(number_of_nucleons) /
         per_nucleon_correction_factor;
     double w = conv_int / (flux_int * double(nev)) * nucleon_scaling_factor;
