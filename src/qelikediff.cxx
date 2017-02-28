@@ -120,25 +120,25 @@ bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
 }
 
 //____________________________________________________________________________
-// normalize to cross section per nucleon
+// normalize to cross section - handle errors by hand as ROOT sometimes
+// has problems with 10^-40 numbers.
 void normalize(TH1* h, const double factor) {
     h->Sumw2();
     for (int i = 1; i <= h->GetNbinsX(); ++i) {
         h->SetBinContent(i, h->GetBinContent(i) * factor);
-        // h->SetBinError(i, h->GetBinError(i) * factor);
-        h->SetBinError(i, 0.0);
+        h->SetBinError(i, h->GetBinError(i) * factor);
     }
 }
 
 //____________________________________________________________________________
-// normalize to cross section per nucleon
+// normalize to cross section - handle errors by hand as ROOT sometimes
+// has problems with 10^-40 numbers.
 void normalize2D(TH2* h, const double factor) {
     h->Sumw2();
     for (int i = 1; i <= h->GetNbinsX(); ++i) {
         for (int j = 1; j <= h->GetNbinsY(); ++j) {
             h->SetBinContent(i, j, h->GetBinContent(i, j) * factor);
-            // h->SetBinError(i, j, h->GetBinError(i, j) * factor);
-            h->SetBinError(i, j, 0.0);
+            h->SetBinError(i, j, h->GetBinError(i, j) * factor);
         }
     }
 }
@@ -184,6 +184,7 @@ int main(int argc, char ** argv)
     std::string list_file_name = "default_nubar_qe_like_scint.txt";
     std::string out_file_name = "default_nubar_qe_like_scint.root";
     int signal_pdg = -14;
+    int number_of_nucleons = 13;             // 13 nucleons in CH
     int per_nucleon_correction_factor = 7;   // 7 protons in CH
     double flux_e_min = 1.5;
     double flux_e_max = 10.0;
@@ -198,27 +199,31 @@ int main(int argc, char ** argv)
             optind++;
             list_file_name = argv[optind];
         }
-        if (sw == "-m" || sw == "--max_events") {
+        else if (sw == "-m" || sw == "--max_events") {
             optind++;
             max_events = Long64_t(atoi(argv[optind]));
         }
-        if (sw == "-s" || sw == "--signal_pdg") {
+        else if (sw == "-s" || sw == "--signal_pdg") {
             optind++;
             signal_pdg = atoi(argv[optind]);
         }
-        if (sw == "-o" || sw == "--out_file") {
+        else if (sw == "-o" || sw == "--out_file") {
             optind++;
             out_file_name = argv[optind];
         }
-        if (sw == "-c" || sw == "--nucleon_correction") {
+        else if (sw == "-c" || sw == "--nucleon_correction") {
             optind++;
             per_nucleon_correction_factor = atoi(argv[optind]);
         }
-        if (sw == "-n" || sw == "--flux_e_min") {
+        else if (sw == "-u" || sw == "--number_of_nucleons") {
+            optind++;
+            number_of_nucleons = atoi(argv[optind]);
+        }
+        else if (sw == "-n" || sw == "--flux_e_min") {
             optind++;
             flux_e_min = atof(argv[optind]);
         }
-        if (sw == "-x" || sw == "--flux_e_max") {
+        else if (sw == "-x" || sw == "--flux_e_max") {
             optind++;
             flux_e_max = atof(argv[optind]);
         }
@@ -426,7 +431,7 @@ int main(int argc, char ** argv)
     int n_cc_events = 0;
     int n_ccqe_events = 0;
     int n_ccqelike_events = 0;
-    double units_scale = 1.0e-39;   // 1.0e-39;
+    double units_scale = 1.0;   // 1.0e-39;
     for(Long64_t i = 0; i < nev; i++) {
 
         // get next tree entry
@@ -485,13 +490,9 @@ int main(int argc, char ** argv)
         double pl_bin_wid = get_bin_width(pl, pl_bins, pl_nbins);        
         double pt_bin_wid = get_bin_width(pt, pt_bins, pt_nbins);        
 
-        double q2_wt = evt_weight / q2_bin_wid;        
-        double enuq2_wt = evt_weight / q2_bin_wid / enu_bin_wid;        
-        double ptpl_wt = evt_weight / pl_bin_wid / pt_bin_wid;
-
-        // double q2_wt = evt_weight;
-        // double enuq2_wt = evt_weight;
-        // double ptpl_wt = evt_weight;
+        double q2_wt = 1.0;
+        double enuq2_wt = 1.0;
+        double ptpl_wt = 1.0;
 
         if (is_cc_event) {
             n_cc_events += 1;
@@ -536,41 +537,28 @@ int main(int argc, char ** argv)
     // division by "flux" 
     // - selected events, not bin-by-bin if not doing sigma(E)
     //
-
     h_dsigmadE->Divide(h_selectedsamp_flux);
     double conv_int = flux_xsec_integral(h_dsigmadE, numubar_flux);
     double flux_int = flux_integral(numubar_flux, flux_e_min, flux_e_max);
-    double w = conv_int / flux_int / double(nev);
+    double nucleon_scaling_factor = double(number_of_nucleons) /
+        per_nucleon_correction_factor;
+    double w = conv_int / (flux_int * double(nev)) * nucleon_scaling_factor;
 
-    normalize(q2_cc,
-            1.0 / q2_cc->GetEntries() / per_nucleon_correction_factor);
+    q2_cc->Scale(w, "width");
+    q2_true_nocut->Scale(w, "width");
+    q2_true_cut->Scale(w, "width");
+    q2_like_nocut->Scale(w, "width");
+    q2_like_cut->Scale(w, "width");
 
-    normalize(q2_true_nocut,
-            w / per_nucleon_correction_factor);
-    normalize(q2_true_cut,
-            w / per_nucleon_correction_factor);
-    normalize(q2_like_nocut,
-            w / per_nucleon_correction_factor);
-    normalize(q2_like_cut,
-            w / per_nucleon_correction_factor);
+    enuq2_true_nocut->Scale(w, "width");
+    enuq2_true_cut->Scale(w, "width");
+    enuq2_like_nocut->Scale(w, "width");
+    enuq2_like_cut->Scale(w, "width");
 
-    normalize2D(enuq2_true_nocut,
-            1.0 / enuq2_true_nocut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(enuq2_true_cut,
-            1.0 / enuq2_true_cut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(enuq2_like_nocut,
-            1.0 / enuq2_like_nocut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(enuq2_like_cut,
-            1.0 / enuq2_like_cut->GetEntries() / per_nucleon_correction_factor);
-
-    normalize2D(ptpl_true_nocut,
-            1.0 / ptpl_true_nocut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(ptpl_true_cut,
-            1.0 / ptpl_true_cut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(ptpl_like_nocut,
-            1.0 / ptpl_like_nocut->GetEntries() / per_nucleon_correction_factor);
-    normalize2D(ptpl_like_cut,
-            1.0 / ptpl_like_cut->GetEntries() / per_nucleon_correction_factor);
+    ptpl_true_nocut->Scale(w, "width");
+    ptpl_true_cut->Scale(w, "width");
+    ptpl_like_nocut->Scale(w, "width");
+    ptpl_like_cut->Scale(w, "width");
 
     //
     // Close histogram file and clean up
