@@ -120,30 +120,6 @@ bool angle_cut(const EventRecord &event, double angle_cut = 20.0) {
 }
 
 //____________________________________________________________________________
-// normalize to cross section - handle errors by hand as ROOT sometimes
-// has problems with 10^-40 numbers.
-void normalize(TH1* h, const double factor) {
-    h->Sumw2();
-    for (int i = 1; i <= h->GetNbinsX(); ++i) {
-        h->SetBinContent(i, h->GetBinContent(i) * factor);
-        h->SetBinError(i, h->GetBinError(i) * factor);
-    }
-}
-
-//____________________________________________________________________________
-// normalize to cross section - handle errors by hand as ROOT sometimes
-// has problems with 10^-40 numbers.
-void normalize2D(TH2* h, const double factor) {
-    h->Sumw2();
-    for (int i = 1; i <= h->GetNbinsX(); ++i) {
-        for (int j = 1; j <= h->GetNbinsY(); ++j) {
-            h->SetBinContent(i, j, h->GetBinContent(i, j) * factor);
-            h->SetBinError(i, j, h->GetBinError(i, j) * factor);
-        }
-    }
-}
-
-//____________________________________________________________________________
 double flux_integral(const TH1D* flux, double emin, double emax) {
     int nbins_flux = flux->GetNbinsX();
     double flux_int = 0.0;
