@@ -1,0 +1,10 @@
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056001.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056002.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056003.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056004.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056005.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056006.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056007.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056008.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056009.ghep.root
+/pnfs/minerva/persistent/users/perdue/GENIE_files/qe_like/z_exp_2_12_2/gntp.12056010.ghep.root
