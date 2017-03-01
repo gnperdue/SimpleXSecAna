@@ -19,8 +19,8 @@ DEBUG=""
 # zexp_nu_qe_like_lead.txt
 # "
 
-NEVT=-1
 NEVT=100000
+NEVT=-1
 
 
 $DEBUG ../bin/qelikediff -f default_nubar_qe_like_scint.txt \
