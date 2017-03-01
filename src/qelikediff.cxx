@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <set>
 
 #include <TSystem.h>
 #include <TFile.h>
@@ -46,7 +47,10 @@ bool is_ccqe_true(const EventRecord &event, int signal_pdg) {
 //____________________________________________________________________________
 // check if the event is ccqe-like
 bool is_ccqe_like(
-        const EventRecord &event, int signal_pdg, const double Tk_cut = 120.0
+        const EventRecord &event,
+        int signal_pdg,
+        const std::set<int> allowedIons,
+        const double Tk_cut = 120.0
         ) {
     if (is_cc_numu_numubar(event, signal_pdg)) {
 
@@ -76,7 +80,9 @@ bool is_ccqe_like(
                     // very soft photons are allowed due to deexcitation "issues"
                     if (pe > 10.0) return false;
                 } else if (ppdg == kPdgNeutron) {
-                    // ok
+                    continue;
+                } else if (allowedIons.count(ppdg) == 1) {
+                    continue;
                 } else {
                     // not allowed!
                     return false;
@@ -153,6 +159,16 @@ int main(int argc, char ** argv)
     int per_nucleon_correction_factor = 7;   // 7 protons in CH
     double flux_e_min = 1.5;
     double flux_e_max = 10.0;
+
+    std::set<int> allowedGENIE_ioncodes;
+    // allowedGENIE_ioncodes.insert(kPdgHadronicSyst); 
+    allowedGENIE_ioncodes.insert(kPdgHadronicBlob); 
+    allowedGENIE_ioncodes.insert(kPdgBindino); 
+    allowedGENIE_ioncodes.insert(kPdgCoulobtron); 
+    // allowedGENIE_ioncodes.insert(kPdgClusterNN); 
+    // allowedGENIE_ioncodes.insert(kPdgClusterNP); 
+    // allowedGENIE_ioncodes.insert(kPdgClusterPP); 
+    // allowedGENIE_ioncodes.insert(kPdgCompNuclCluster); 
 
     //
     // process command line options
@@ -312,7 +328,7 @@ int main(int argc, char ** argv)
 
     // CC Inclusive
 
-    sprintf(axes1, "Differential cross section - CC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - CC;Q^{2}_{QE} (GeV^{2});Cross section (cm^{2})");
     TH1D* q2_cc = new TH1D("q2_cc", axes1, q2_nbins, q2_bins);
 
     sprintf(axes1, "Number of CC Events;Q^{2}_{QE} (GeV^{2});N-Events");
@@ -320,22 +336,22 @@ int main(int argc, char ** argv)
 
     // CCQE "True"
 
-    sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - true CCQE or MEC;Q^{2}_{QE} (GeV^{2});Cross section (cm^{2})");
     TH1D* q2_true_nocut = new TH1D("q2_true_nocut", axes1, q2_nbins, q2_bins);
 
     // CCQE "True" - angle cut
 
-    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - true CCQE or MEC (angle cut);Q^{2}_{QE} (GeV^{2});Cross section (cm^{2})");
     TH1D* q2_true_cut = new TH1D("q2_true_cut", axes1, q2_nbins, q2_bins);
 
     // CCQE-like
 
-    sprintf(axes1, "Differential cross section - QE-like;Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - QE-like;Q^{2}_{QE} (GeV^{2});Cross section (cm^{2})");
     TH1D* q2_like_nocut = new TH1D("q2_like_nocut", axes1, q2_nbins, q2_bins);
 
     // CCQE-like - angle cut
 
-    sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2}_{QE} (GeV^{2});Cross section times 10^{39} cm^{2}");
+    sprintf(axes1, "Differential cross section - QE-like (angle cut);Q^{2}_{QE} (GeV^{2});Cross section (cm^{2})");
     TH1D* q2_like_cut = new TH1D("q2_like_cut", axes1, q2_nbins, q2_bins);
 
     // 2D
@@ -412,7 +428,7 @@ int main(int argc, char ** argv)
         // is this a signal event?
         bool is_cc_event = is_cc_numu_numubar(event, signal_pdg);
         bool is_ccqe_true_event = is_ccqe_true(event, signal_pdg);
-        bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg);
+        bool is_ccqe_like_event = is_ccqe_like(event, signal_pdg, allowedGENIE_ioncodes);
 
         double evt_weight = event.XSec() / (units_scale * units::cm2);
         // bin width normalization falls out when we divide by h_selectedsamp_flux later
